@@ -6,115 +6,140 @@
     <title>Gig Casino</title>
     <script src="https://telegram.org"></script>
     <style>
-        :root { --bg: #000; --card: #151515; --accent: #9d4edd; --gray: #888; }
+        :root { --bg: #000; --card: #151515; --accent: #9d4edd; --gray: #888; --glass: rgba(255,255,255,0.05); }
         body { background: var(--bg); color: #fff; font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 0; overflow: hidden; height: 100vh; }
 
         /* ЛОАДЕР */
-        #loader {
-            position: fixed; inset: 0; background: #0f1721;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999;
-        }
+        #loader { position: fixed; inset: 0; background: #0f1721; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
         .spinner { width: 40px; height: 40px; border: 4px solid rgba(51, 144, 236, 0.1); border-top: 4px solid #3390ec; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ОСНОВНОЙ КОНТЕНТ */
-        #main-app { display: none; flex-direction: column; height: 100vh; opacity: 0; transition: opacity 0.5s ease; }
+        /* КОНТЕЙНЕРЫ ЭКРАНОВ */
+        .screen { display: none; flex-direction: column; height: 100vh; overflow-y: auto; padding-bottom: 100px; opacity: 0; transition: 0.3s; }
+        .active-screen { display: flex; opacity: 1; }
 
-        .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        /* ШАПКА */
+        .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--bg); z-index: 10; }
         .balance-top { background: rgba(157, 78, 221, 0.1); padding: 6px 14px; border-radius: 20px; color: var(--accent); font-weight: bold; border: 1px solid rgba(157, 78, 221, 0.2); }
-        
-        .profile-card { background: linear-gradient(180deg, #2d1b4d 0%, #151515 100%); margin: 10px 15px; border-radius: 24px; padding: 25px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+
+        /* ПРОФИЛЬ */
+        .profile-card { background: linear-gradient(180deg, #2d1b4d 0%, #151515 100%); margin: 10px 15px; border-radius: 24px; padding: 25px; text-align: center; border: 1px solid var(--glass); }
         .avatar { width: 85px; height: 85px; background: #222; border-radius: 25px; margin: 0 auto 15px; overflow: hidden; border: 2px solid var(--accent); }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
-        
-        .stats-grid { display: flex; justify-content: space-around; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px; margin-top: 20px; }
-        .stat-item { display: flex; flex-direction: column; gap: 4px; }
-        .stat-val { font-size: 18px; font-weight: 800; }
-        .stat-lbl { font-size: 10px; color: var(--gray); text-transform: uppercase; }
+        .stats-grid { display: flex; justify-content: space-around; border-top: 1px solid var(--glass); padding-top: 20px; margin-top: 20px; }
 
-        .btn-play { background: var(--accent); color: white; margin: 20px 15px 10px; padding: 18px; border-radius: 20px; text-align: center; font-weight: 800; font-size: 16px; box-shadow: 0 10px 20px rgba(157, 78, 221, 0.3); }
-        .btn-stats { background: #1a1a1a; color: white; margin: 0 15px; padding: 18px; border-radius: 20px; text-align: center; font-weight: bold; border: 1px solid #333; }
+        /* КНОПКИ МЕНЮ */
+        .main-btn { background: var(--accent); color: white; margin: 10px 15px; padding: 18px; border-radius: 20px; text-align: center; font-weight: 800; font-size: 16px; box-shadow: 0 10px 20px rgba(157, 78, 221, 0.2); cursor: pointer; }
 
-        .nav-bar { margin-top: auto; background: #0a0a0a; display: flex; justify-content: space-around; padding: 15px 0 35px; border-top: 1px solid #1a1a1a; }
+        /* СПИСОК ИГР (АРЕНА) */
+        .games-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 15px; }
+        .game-card { background: var(--card); border-radius: 20px; padding: 15px; border: 1px solid var(--glass); position: relative; overflow: hidden; transition: 0.2s; }
+        .game-card:active { transform: scale(0.95); background: #222; }
+        .game-icon { font-size: 30px; margin-bottom: 10px; display: block; }
+        .game-title { font-weight: bold; font-size: 14px; display: block; }
+        .game-desc { font-size: 10px; color: var(--gray); margin-top: 4px; display: block; }
+        .tag-pvp { position: absolute; top: 8px; right: 8px; background: #ff4757; font-size: 8px; padding: 2px 6px; border-radius: 10px; font-weight: bold; }
+
+        /* НАВИГАЦИЯ */
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #0a0a0a; display: flex; justify-content: space-around; padding: 15px 0 30px; border-top: 1px solid #1a1a1a; z-index: 100; }
         .nav-item { color: var(--gray); font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
         .nav-item.active { color: var(--accent); }
     </style>
 </head>
 <body>
 
-    <!-- Экран загрузки -->
     <div id="loader">
         <div class="spinner"></div>
-        <p style="color: #3390ec; font-weight: bold; margin-top: 15px; letter-spacing: 2px;">GIG CASINO</p>
+        <p style="color: #3390ec; font-weight: bold; margin-top: 15px; letter-spacing: 2px; font-size: 12px;">GIG CASINO</p>
     </div>
 
-    <!-- Главный экран -->
-    <div id="main-app">
+    <!-- ЭКРАН ПРОФИЛЯ -->
+    <div id="screen-profile" class="screen active-screen">
         <div class="header">
-            <div style="font-size: 20px; opacity: 0.6;">⚙️</div>
-            <div class="balance-top">💎 <span id="top-balance">5 000</span></div>
+            <div>⚙️</div>
+            <div class="balance-top">💎 <span id="u-bal">5 000</span></div>
         </div>
-
         <div class="profile-card">
-            <div class="avatar"><img id="u-photo" src="https://placeholder.com" alt=""></div>
-            <div id="u-name" style="font-size: 22px; font-weight: 800; margin-bottom: 5px;">@Игрок</div>
-            <div id="u-id" style="font-size: 11px; color: var(--gray); margin-bottom: 20px;">ID: 000000</div>
-            
+            <div class="avatar"><img id="u-photo" src="https://placeholder.com"></div>
+            <div id="u-name" style="font-size: 22px; font-weight: 800;">@Игрок</div>
             <div class="stats-grid">
-                <div class="stat-item">
-                    <span class="stat-val" id="g-count">0</span>
-                    <span class="stat-lbl">Игры</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-val" id="b-win">0 💎</span>
-                    <span class="stat-lbl">Рекорд</span>
-                </div>
+                <div><span style="display:block; font-size:18px; font-weight:800">0</span><small style="color:var(--gray)">ИГРЫ</small></div>
+                <div><span style="display:block; font-size:18px; font-weight:800">0 💎</span><small style="color:var(--gray)">РЕКОРД</small></div>
             </div>
         </div>
+        <div class="main-btn" onclick="showScreen('screen-games')">ИГРАТЬ 🚀</div>
+        <div class="main-btn" style="background:#1a1a1a; border:1px solid #333" onclick="tg.showAlert('Статистика пуста')">📊 СТАТИСТИКА</div>
+    </div>
 
-        <div class="btn-play" onclick="window.Telegram.WebApp.showAlert('Арена в разработке!')">ИГРАТЬ 🚀</div>
-        <div class="btn-stats" onclick="window.Telegram.WebApp.showPopup({message: 'Статистика скоро появится'})">📊 СТАТИСТИКА</div>
-
-        <div class="nav-bar">
-            <div class="nav-item"><span>🛒</span>Маркет</div>
-            <div class="nav-item"><span>⚔️</span>Арена</div>
-            <div class="nav-item"><span>🎁</span>Инвентарь</div>
-            <div class="nav-item active"><span>👤</span>Профиль</div>
+    <!-- ЭКРАН ИГР (АРЕНА) -->
+    <div id="screen-games" class="screen">
+        <div class="header">
+            <div onclick="showScreen('screen-profile')" style="font-size:20px">⬅️</div>
+            <b style="font-size:18px">АРЕНА ИГР</b>
+            <div class="balance-top">💎 5000</div>
         </div>
+        <div class="games-grid" id="games-list">
+            <!-- Игры вставляются через JS -->
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-item" onclick="tg.showAlert('Маркет скоро!')"><span>🛒</span>Маркет</div>
+        <div class="nav-item active" onclick="showScreen('screen-games')"><span>⚔️</span>Арена</div>
+        <div class="nav-item" onclick="tg.showAlert('Инвентарь пуст')"><span>🎁</span>Инвентарь</div>
+        <div class="nav-item" onclick="showScreen('screen-profile')"><span>👤</span>Профиль</div>
     </div>
 
     <script>
-        // Функция переключения экранов
-        function unlockApp() {
-            const loader = document.getElementById('loader');
-            const app = document.getElementById('main-app');
-            if (loader) loader.style.display = 'none';
-            if (app) {
-                app.style.display = 'flex';
-                setTimeout(() => { app.style.opacity = '1'; }, 50);
-            }
+        const tg = window.Telegram.WebApp;
+        tg.ready(); tg.expand();
+
+        const games = [
+            { id: 1, n: "Классик Слот", i: "🎰", d: "Три барабана" },
+            { id: 2, n: "Кубик", i: "🎲", d: "Больше или меньше" },
+            { id: 3, n: "Попади в цель", i: "🎯", d: "Проверь точность" },
+            { id: 4, n: "Орел/Решка", i: "🪙", d: "Крипто монета" },
+            { id: 5, n: "Пульс (X100)", i: "📈", d: "Успей забрать" },
+            { id: 51, n: "Пульс (Stable)", i: "📉", d: "Меньший риск" },
+            { id: 6, n: "Кейс: Крипта", i: "📦", d: "Выбей Bitcoin" },
+            { id: 7, n: "Кейс: Стикеры", i: "🖼", d: "Редкие наборы" },
+            { id: 8, n: "Кейс: NFT", i: "🖼", d: "Цифровое искусство" },
+            { id: 9, n: "Слот: Золото", i: "💰", d: "Вид 1" },
+            { id: 10, n: "Слот: Фрукты", i: "🍎", d: "Вид 2" },
+            { id: 11, n: "Слот: Египет", i: "🏺", d: "Вид 3" },
+            { id: 12, n: "Карточный стол", i: "🃏", d: "Покер / Блэкджек", pvp: true },
+            { id: 13, n: "Русская рулетка", i: "🔫", d: "Выживание", pvp: true },
+            { id: 14, n: "Портал", i: "🌀", d: "Случайный множитель" },
+            { id: 15, n: "Минное поле", i: "💣", d: "1/3/5/7 мин" },
+            { id: 16, n: "Рулетка (1-40)", i: "🎡", d: "Ставки на числа", pvp: true }
+        ];
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
+            document.getElementById(id).classList.add('active-screen');
         }
 
-        // Запуск таймера на 2 секунды (гарантирует вход)
-        setTimeout(unlockApp, 2000);
+        const list = document.getElementById('games-list');
+        games.forEach(g => {
+            const card = document.createElement('div');
+            card.className = 'game-card';
+            card.onclick = () => tg.showAlert(`Запуск игры: ${g.n}`);
+            card.innerHTML = `
+                ${g.pvp ? '<span class="tag-pvp">PVP</span>' : ''}
+                <span class="game-icon">${g.i}</span>
+                <span class="game-title">${g.n}</span>
+                <span class="game-desc">${g.d}</span>
+            `;
+            list.appendChild(card);
+        });
 
-        // Инициализация Telegram
-        try {
-            const tg = window.Telegram.WebApp;
-            tg.ready();
-            tg.expand();
-
-            const user = tg.initDataUnsafe?.user;
-            if (user) {
-                document.getElementById('u-name').innerText = user.username ? '@' + user.username : user.first_name;
-                document.getElementById('u-id').innerText = 'ID: ' + user.id;
-                if (user.photo_url) document.getElementById('u-photo').src = user.photo_url;
-            }
-        } catch (e) {
-            console.error("Telegram init error");
+        const user = tg.initDataUnsafe?.user;
+        if(user) {
+            document.getElementById('u-name').innerText = user.username ? '@'+user.username : user.first_name;
+            if(user.photo_url) document.getElementById('u-photo').src = user.photo_url;
         }
+
+        setTimeout(() => document.getElementById('loader').style.display='none', 2000);
     </script>
 </body>
 </html>
-
-
