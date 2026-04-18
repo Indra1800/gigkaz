@@ -6,215 +6,121 @@
     <title>Gig Casino</title>
     <script src="https://telegram.org"></script>
     <style>
-        :root {
-            --bg: #000000;
-            --card-grad: linear-gradient(180deg, #2d1b4d 0%, #151515 100%);
-            --accent: #9d4edd;
-            --gray: #888888;
-            --glass: rgba(255, 255, 255, 0.05);
-        }
+        :root { --bg: #000; --accent: #9d4edd; --card: #151515; --gray: #888; }
+        body { background: var(--bg); color: #fff; font-family: -apple-system, sans-serif; margin: 0; padding: 0; overflow: hidden; height: 100vh; }
 
-        body {
-            background-color: var(--bg);
-            color: #ffffff;
-            font-family: -apple-system, system-ui, sans-serif;
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* ЭКРАН ЗАГРУЗКИ */
-        #loader {
-            position: fixed; inset: 0; background: #0f1721;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 10000; transition: opacity 0.5s;
-        }
-        .spinner {
-            width: 50px; height: 50px;
-            border: 4px solid rgba(51, 144, 236, 0.1);
-            border-top: 4px solid #3390ec;
-            border-radius: 50%; animation: spin 1s linear infinite;
-        }
+        /* ЗАГРУЗКА */
+        #loader { position: fixed; inset: 0; background: #0f1721; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #3390ec33; border-top: 4px solid #3390ec; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ОСНОВНАЯ СТРУКТУРА ЭКРАНОВ */
-        .screen {
-            display: none; flex-direction: column; height: 100vh;
-            overflow-y: auto; padding-bottom: 90px; box-sizing: border-box;
-        }
-        .active-screen { display: flex !important; }
+        /* ЭКРАНЫ */
+        #main-app { display: none; flex-direction: column; height: 100vh; }
+        .screen { display: none; flex-direction: column; height: 100%; overflow-y: auto; padding-bottom: 100px; }
+        .active { display: flex !important; }
 
-        /* ХЕДЕР */
-        .header {
-            padding: 20px; display: flex; justify-content: space-between; align-items: center;
-            position: sticky; top: 0; background: var(--bg); z-index: 100;
-        }
-        .balance-pill {
-            background: rgba(157, 78, 221, 0.1); padding: 6px 14px;
-            border-radius: 20px; color: var(--accent); font-weight: bold;
-            border: 1px solid rgba(157, 78, 221, 0.2);
-        }
-
-        /* ПРОФИЛЬ */
-        .profile-card {
-            background: var(--card-grad); margin: 10px 15px;
-            border-radius: 28px; padding: 30px 20px; text-align: center;
-            border: 1px solid var(--glass);
-        }
-        .avatar {
-            width: 90px; height: 90px; background: #222;
-            border-radius: 25px; margin: 0 auto 15px;
-            border: 2px solid var(--accent); overflow: hidden;
-        }
-        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        /* ДИЗАЙН МЕНЮ */
+        .header { padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #000; z-index: 10; }
+        .balance { background: #9d4edd1a; padding: 5px 15px; border-radius: 20px; color: var(--accent); font-weight: bold; border: 1px solid #9d4edd33; }
         
-        .stats-row {
-            display: flex; justify-content: space-around;
-            margin-top: 25px; border-top: 1px solid var(--glass); padding-top: 20px;
-        }
-        .stat-box b { display: block; font-size: 20px; font-weight: 800; }
-        .stat-box small { color: var(--gray); font-size: 10px; text-transform: uppercase; }
+        .p-card { background: linear-gradient(180deg, #2d1b4d, #151515); margin: 10px 15px; padding: 25px; border-radius: 25px; text-align: center; border: 1px solid #ffffff1a; }
+        .ava { width: 80px; height: 80px; background: #222; border-radius: 20px; margin: 0 auto 15px; border: 2px solid var(--accent); overflow: hidden; }
+        .ava img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .btn-play { background: var(--accent); color: #fff; margin: 15px; padding: 18px; border-radius: 20px; text-align: center; font-weight: 800; font-size: 16px; box-shadow: 0 5px 15px rgba(157, 78, 221, 0.3); }
 
-        /* КНОПКИ */
-        .btn-main {
-            background: var(--accent); color: #fff; margin: 15px;
-            padding: 20px; border-radius: 20px; text-align: center;
-            font-weight: 800; font-size: 16px; cursor: pointer;
-            box-shadow: 0 10px 20px rgba(157, 78, 221, 0.2);
-        }
-        .btn-secondary {
-            background: #151515; color: #fff; margin: 0 15px;
-            padding: 18px; border-radius: 20px; text-align: center;
-            font-weight: bold; border: 1px solid #333; cursor: pointer;
-        }
-
-        /* СЕТКА ИГР (АРЕНА) */
-        .games-grid {
-            display: grid; grid-template-columns: 1fr 1fr;
-            gap: 12px; padding: 10px 15px;
-        }
-        .game-item {
-            background: #121212; border-radius: 22px; padding: 20px 15px;
-            border: 1px solid var(--glass); position: relative; text-align: center;
-        }
-        .game-item:active { transform: scale(0.96); background: #1a1a1a; }
-        .g-icon { font-size: 32px; display: block; margin-bottom: 10px; }
-        .g-name { font-weight: bold; font-size: 14px; }
-        .pvp-badge {
-            position: absolute; top: 10px; right: 10px;
-            background: #ff4757; font-size: 8px; padding: 2px 6px;
-            border-radius: 8px; font-weight: bold;
-        }
+        /* СЕТКА АРЕНЫ */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
+        .g-item { background: var(--card); border-radius: 20px; padding: 15px; border: 1px solid #ffffff0d; position: relative; text-align: center; }
+        .g-item:active { transform: scale(0.95); background: #222; }
+        .g-icon { font-size: 30px; display: block; margin-bottom: 8px; }
+        .g-name { font-weight: bold; font-size: 13px; }
+        .pvp { position: absolute; top: 8px; right: 8px; background: #ff4757; font-size: 8px; padding: 2px 6px; border-radius: 10px; font-weight: bold; }
 
         /* НАВИГАЦИЯ */
-        .nav-bar {
-            position: fixed; bottom: 0; width: 100%;
-            background: #0a0a0a; display: flex; justify-content: space-around;
-            padding: 15px 0 35px; border-top: 1px solid #1a1a1a; z-index: 1000;
-        }
-        .nav-link {
-            color: var(--gray); font-size: 10px; text-align: center;
-            flex: 1; cursor: pointer; display: flex; flex-direction: column; gap: 5px;
-        }
-        .nav-link.active { color: var(--accent); }
-        .nav-link span { font-size: 20px; }
+        .nav { position: fixed; bottom: 0; width: 100%; background: #0a0a0a; display: flex; justify-content: space-around; padding: 15px 0 35px; border-top: 1px solid #1a1a1a; z-index: 9999; }
+        .n-btn { opacity: 0.5; font-size: 10px; text-align: center; flex: 1; display: flex; flex-direction: column; gap: 5px; }
+        .n-active { opacity: 1; color: var(--accent); }
     </style>
 </head>
 <body>
 
-    <!-- ЛОАДЕР -->
     <div id="loader">
         <div class="spinner"></div>
-        <p style="color:#3390ec; margin-top:20px; font-weight:bold; letter-spacing:2px">GIG CASINO</p>
+        <p style="color:#3390ec; margin-top:15px; font-weight: bold;">GIG CASINO</p>
     </div>
 
-    <!-- ЭКРАН ПРОФИЛЯ -->
-    <div id="scr-profile" class="screen active-screen">
-        <div class="header">
-            <div style="font-size:20px; opacity:0.5">⚙️</div>
-            <div class="balance-pill">💎 <span id="b1">5 000</span></div>
+    <div id="main-app">
+        <!-- ЭКРАН: ПРОФИЛЬ -->
+        <div id="scr-p" class="screen active">
+            <div class="header"><span>⚙️</span> <div class="balance">💎 5 000</div></div>
+            <div class="p-card">
+                <div class="ava"><img id="u-ava" src="https://placeholder.com"></div>
+                <h2 id="u-name" style="margin:0">@Игрок</h2>
+                <div style="display:flex; justify-content:space-around; margin-top:20px; border-top:1px solid #ffffff1a; padding-top:15px">
+                    <div><b>0</b><br><small style="color:var(--gray)">ИГРЫ</small></div>
+                    <div><b>0 💎</b><br><small style="color:var(--gray)">РЕКОРД</small></div>
+                </div>
+            </div>
+            <div class="btn-play" onclick="go('scr-a')">ИГРАТЬ 🚀</div>
         </div>
-        <div class="profile-card">
-            <div class="avatar"><img id="u-ava" src="https://placeholder.com"></div>
-            <div id="u-nick" style="font-size:22px; font-weight:900">@Игрок</div>
-            <div class="stats-row">
-                <div class="stat-box"><b id="s-games">0</b><small>Игры</small></div>
-                <div class="stat-box"><b id="s-win">0 💎</b><small>Рекорд</small></div>
+
+        <!-- ЭКРАН: АРЕНА (16 ИГР) -->
+        <div id="scr-a" class="screen">
+            <div class="header"><span onclick="go('scr-p')" style="font-size:20px">⬅️</span> <b>АРЕНА</b> <div class="balance">💎 5000</div></div>
+            <div class="grid">
+                <div class="g-item" onclick="alert('Слот')"><span class="g-icon">🎰</span><span class="g-name">Слот Классик</span></div>
+                <div class="g-item" onclick="alert('Кубик')"><span class="g-icon">🎲</span><span class="g-name">Кубик</span></div>
+                <div class="g-item" onclick="alert('Цель')"><span class="g-icon">🎯</span><span class="g-name">Попади в цель</span></div>
+                <div class="g-item" onclick="alert('Орел/Решка')"><span class="g-icon">🪙</span><span class="g-name">Орел / Решка</span></div>
+                <div class="g-item" onclick="alert('Пульс 1')"><span class="g-icon">📈</span><span class="g-name">Пульс X100</span></div>
+                <div class="g-item" onclick="alert('Пульс 2')"><span class="g-icon">📉</span><span class="g-name">Пульс Stable</span></div>
+                <div class="g-item" onclick="alert('Кейс 1')"><span class="g-icon">📦</span><span class="g-name">Кейс: Крипта</span></div>
+                <div class="g-item" onclick="alert('Кейс 2')"><span class="g-icon">🖼</span><span class="g-name">Кейс: Стикеры</span></div>
+                <div class="g-item" onclick="alert('Кейс 3')"><span class="g-icon">💎</span><span class="g-name">Кейс: NFT</span></div>
+                <div class="g-item" onclick="alert('Слот 1')"><span class="g-icon">💰</span><span class="g-name">Слот: Золото</span></div>
+                <div class="g-item" onclick="alert('Слот 2')"><span class="g-icon">🍎</span><span class="g-name">Слот: Фрукты</span></div>
+                <div class="g-item" onclick="alert('Слот 3')"><span class="g-icon">🏺</span><span class="g-name">Слот: Египет</span></div>
+                <div class="g-item" onclick="alert('Карты')"><span class="pvp">PVP</span><span class="g-icon">🃏</span><span class="g-name">Дурак / Покер</span></div>
+                <div class="g-item" onclick="alert('Рулетка')"><span class="pvp">PVP</span><span class="g-icon">🔫</span><span class="g-name">Рулетка Русская</span></div>
+                <div class="g-item" onclick="alert('Портал')"><span class="g-icon">🌀</span><span class="g-name">Портал</span></div>
+                <div class="g-item" onclick="alert('Мины')"><span class="g-icon">💣</span><span class="g-name">Минное поле</span></div>
+                <div class="g-item" onclick="alert('Рулетка 40')"><span class="pvp">PVP</span><span class="g-icon">🎡</span><span class="g-name">Рулетка 1-40</span></div>
             </div>
         </div>
-        <div class="btn-main" onclick="changeTab('scr-arena')">ИГРАТЬ 🚀</div>
-        <div class="btn-secondary" onclick="window.Telegram.WebApp.showPopup({message:'Статистика пуста'})">📊 СТАТИСТИКА</div>
-    </div>
 
-    <!-- ЭКРАН АРЕНЫ -->
-    <div id="scr-arena" class="screen">
-        <div class="header">
-            <div onclick="changeTab('scr-profile')" style="font-size:20px">⬅️</div>
-            <b style="font-size:18px">АРЕНА</b>
-            <div class="balance-pill">💎 5 000</div>
-        </div>
-        <div class="games-grid" id="arena-list">
-            <!-- Игры загрузятся через JS -->
+        <!-- НАВИГАЦИЯ -->
+        <div class="nav">
+            <div class="n-btn" onclick="alert('Скоро')"><span>🛒</span>Маркет</div>
+            <div id="n-a" class="n-btn" onclick="go('scr-a')"><span>⚔️</span>Арена</div>
+            <div class="n-btn" onclick="alert('Пусто')"><span>🎁</span>Инвент</div>
+            <div id="n-p" class="n-btn n-active" onclick="go('scr-p')"><span>👤</span>Профиль</div>
         </div>
     </div>
-
-    <!-- МЕНЮ -->
-    <nav class="nav-bar">
-        <div class="nav-link" onclick="window.Telegram.WebApp.showAlert('Скоро!')"><span>🛒</span>Маркет</div>
-        <div id="n-arena" class="nav-link" onclick="changeTab('scr-arena')"><span>⚔️</span>Арена</div>
-        <div class="nav-link" onclick="window.Telegram.WebApp.showAlert('Пусто')"><span>🎁</span>Инвентарь</div>
-        <div id="n-profile" class="nav-link active" onclick="changeTab('scr-profile')"><span>👤</span>Профиль</div>
-    </nav>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready(); tg.expand();
-
-        // Список всех твоих 16 игр
-        const gameLibrary = [
-            { n: "Слот Классик", i: "🎰" }, { n: "Кубик", i: "🎲" },
-            { n: "Цель", i: "🎯" }, { n: "Орел/Решка", i: "🪙" },
-            { n: "Пульс X100", i: "📈" }, { n: "Пульс Stable", i: "📉" },
-            { n: "Кейс Крипта", i: "📦" }, { n: "Кейс Стикеры", i: "🖼" },
-            { n: "Кейс NFT", i: "🖼" }, { n: "Слот Золото", i: "💰" },
-            { n: "Слот Фрукты", i: "🍎" }, { n: "Слот Египет", i: "🏺" },
-            { n: "Карты (Дурак)", i: "🃏", p: true }, { n: "Рулетка (PVP)", i: "🔫", p: true },
-            { n: "Портал", i: "🌀" }, { n: "Мины", i: "💣" }
-        ];
-
-        // Функция переключения (Глобальная)
-        window.changeTab = function(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
-            document.getElementById(id).classList.add('active-screen');
-            
-            document.getElementById('n-arena').classList.toggle('active', id === 'scr-arena');
-            document.getElementById('n-profile').classList.toggle('active', id === 'scr-profile');
+        function go(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.getElementById('n-a').classList.toggle('n-active', id === 'scr-a');
+            document.getElementById('n-p').classList.toggle('n-active', id === 'scr-p');
         }
 
-        // Рендер Арены
-        const container = document.getElementById('arena-list');
-        gameLibrary.forEach(g => {
-            const div = document.createElement('div');
-            div.className = 'game-item';
-            div.onclick = () => tg.showAlert('Игра ' + g.n + ' в разработке');
-            div.innerHTML = `${g.p ? '<span class="pvp-badge">PVP</span>' : ''}<span class="g-icon">${g.i}</span><span class="g-name">${g.n}</span>`;
-            container.appendChild(div);
-        });
+        window.onload = function() {
+            try {
+                const tg = window.Telegram.WebApp;
+                tg.ready(); tg.expand();
+                const u = tg.initDataUnsafe?.user;
+                if(u) {
+                    document.getElementById('u-name').innerText = u.username ? '@'+u.username : u.first_name;
+                    if(u.photo_url) document.getElementById('u-ava').src = u.photo_url;
+                }
+            } catch(e) { console.error(e); }
 
-        // Запуск данных
-        window.onload = () => {
-            const u = tg.initDataUnsafe?.user;
-            if(u) {
-                document.getElementById('u-nick').innerText = u.username ? '@'+u.username : u.first_name;
-                if(u.photo_url) document.getElementById('u-ava').src = u.photo_url;
-            }
-            
-            // Скрытие загрузки через 2 сек
+            // Прячем загрузку ровно через 2 секунды
             setTimeout(() => {
-                const ldr = document.getElementById('loader');
-                ldr.style.opacity = '0';
-                setTimeout(() => ldr.style.display = 'none', 500);
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('main-app').style.display = 'flex';
             }, 2000);
         };
     </script>
