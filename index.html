@@ -3,90 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Gig Casino Profile</title>
+    <title>Gig Casino</title>
     <script src="https://telegram.org"></script>
     <style>
         :root { --bg-color: #000000; --card-bg: #151515; --accent: #9d4edd; --text-main: #ffffff; --text-gray: #888888; }
-        body { background: var(--bg-color); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; }
         
-        /* Хедер */
-        .header { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .balance-top { background: rgba(157, 78, 221, 0.1); padding: 5px 12px; border-radius: 20px; color: var(--accent); font-weight: bold; display: flex; align-items: center; gap: 5px; }
+        body { background: var(--bg-color); color: var(--text-main); font-family: sans-serif; margin: 0; padding: 0; overflow: hidden; height: 100vh; }
 
-        /* Карточка профиля */
-        .profile-card { background: linear-gradient(180deg, #2d1b4d 0%, #151515 100%); margin: 10px 15px; border-radius: 24px; padding: 25px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
-        .avatar { width: 80px; height: 80px; background: white; border-radius: 20px; margin: 0 auto 15px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-        .avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .username { font-size: 20px; font-weight: bold; margin-bottom: 20px; }
+        /* ЭКРАН ЗАГРУЗКИ */
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #0f1721; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 9999;
+        }
+        .loader-icon {
+            width: 80px; filter: drop-shadow(0 0 10px #3390ec);
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.6; }
+        }
+
+        /* ГЛАВНЫЙ КОНТЕНТ (скрыт изначально) */
+        #main-content { display: none; flex-direction: column; height: 100vh; opacity: 0; transition: opacity 0.5s ease; }
+
+        /* Стили Профиля */
+        .header { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .balance-top { background: rgba(157, 78, 221, 0.1); padding: 5px 12px; border-radius: 20px; color: var(--accent); font-weight: bold; }
         
-        .stats-grid { display: flex; justify-content: space-around; border-top: 1px solid rgba(255,255,255,0.1); pt: 15px; padding-top: 15px; }
-        .stat-item { display: flex; flex-direction: column; gap: 5px; }
+        .profile-card { background: linear-gradient(180deg, #2d1b4d 0%, #151515 100%); margin: 10px 15px; border-radius: 24px; padding: 25px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+        .avatar { width: 80px; height: 80px; background: #333; border-radius: 20px; margin: 0 auto 15px; overflow: hidden; }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .stats-grid { display: flex; justify-content: space-around; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; margin-top: 15px; }
+        .stat-item { display: flex; flex-direction: column; }
         .stat-val { font-size: 18px; font-weight: bold; }
         .stat-lbl { font-size: 12px; color: var(--text-gray); }
 
-        /* Кнопка */
-        .action-btn { background: var(--accent); color: white; margin: 20px 15px; padding: 18px; border-radius: 18px; text-align: center; font-weight: bold; font-size: 16px; cursor: pointer; }
-
-        /* Нижнее меню */
+        .action-btn { background: var(--accent); color: white; margin: 10px 15px; padding: 18px; border-radius: 18px; text-align: center; font-weight: bold; cursor: pointer; }
+        
         .nav-bar { margin-top: auto; background: #111; display: flex; justify-content: space-around; padding: 15px 0 30px; border-radius: 30px 30px 0 0; }
-        .nav-item { color: var(--text-gray); font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .nav-item.active { color: white; }
-        .nav-icon { font-size: 20px; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <div style="font-size: 20px; opacity: 0.5;">⚙️</div>
-        <div class="balance-top">💎 <span id="top-balance">5000</span></div>
+    <!-- ЭКРАН ЗАГРУЗКИ -->
+    <div id="loader">
+        <svg class="loader-icon" viewBox="0 0 24 24" fill="none" xmlns="http://w3.org">
+            <path d="M20 12V22H4V12M18 12V7C18 3.68629 15.3137 1 12 1C8.68629 1 6 3.68629 6 7V12M12 12V17" stroke="#3390ec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+        <p style="color: #3390ec; font-weight: bold; letter-spacing: 1px; margin-top: 15px;">ЗАГРУЗКА...</p>
     </div>
 
-    <div class="profile-card">
-        <div class="avatar"><img id="user-photo" src="https://placeholder.com" alt=""></div>
-        <div class="username" id="user-name">@Игрок</div>
-        
-        <div class="stats-grid">
-            <div class="stat-item">
-                <span class="stat-val" id="games-count">0</span>
-                <span class="stat-lbl">Игры</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-val" id="best-win">0 💎</span>
-                <span class="stat-lbl">Лучший выигрыш</span>
+    <!-- ГЛАВНЫЙ ЭКРАН -->
+    <div id="main-content">
+        <div class="header">
+            <div style="font-size: 20px; opacity: 0.5;">⚙️</div>
+            <div class="balance-top">💎 <span id="top-balance">5000</span></div>
+        </div>
+
+        <div class="profile-card">
+            <div class="avatar"><img id="user-photo" src="https://placeholder.com" alt=""></div>
+            <div class="username" id="user-name" style="font-size: 20px; font-weight: bold; margin-bottom: 20px;">@Игрок</div>
+            
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-val" id="games-count">0</span>
+                    <span class="stat-lbl">Игры</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-val" id="best-win">0 💎</span>
+                    <span class="stat-lbl">Лучший выигрыш</span>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="action-btn" onclick="openGames()">ИГРАТЬ 🚀</div>
-    <div class="action-btn" style="background: #222; margin-top: -10px;" onclick="openStats()">📊 СТАТИСТИКА</div>
+        <div class="action-btn" onclick="tg.showPopup({message: 'Игры скоро будут!'})">ИГРАТЬ 🚀</div>
+        <div class="action-btn" style="background: #222;" onclick="tg.showPopup({message: 'Статистика в разработке'})">📊 СТАТИСТИКА</div>
 
-    <div class="nav-bar">
-        <div class="nav-item"><span class="nav-icon">🛒</span>Маркет</div>
-        <div class="nav-item"><span class="nav-icon">⚔️</span>Арена</div>
-        <div class="nav-item"><span class="nav-icon">🎁</span>Инвентарь</div>
-        <div class="nav-item active"><span class="nav-icon">👤</span>Профиль</div>
+        <div class="nav-bar">
+            <div style="opacity: 0.5">🛒</div>
+            <div style="opacity: 0.5">⚔️</div>
+            <div style="opacity: 0.5">🎁</div>
+            <div style="color: white">👤</div>
+        </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
-        tg.setHeaderColor('#000000');
 
-        // Подтягиваем данные из Телеграм
+        // Инициализация данных пользователя
         const user = tg.initDataUnsafe?.user;
         if (user) {
             document.getElementById('user-name').innerText = user.username ? `@${user.username}` : user.first_name;
             if (user.photo_url) document.getElementById('user-photo').src = user.photo_url;
         }
 
-        function openGames() {
-            tg.showPopup({ message: "Список игр скоро появится!" });
-        }
-
-        function openStats() {
-            tg.showPopup({ message: "Тут будет детальная статистика" });
-        }
+        // Логика исчезновения загрузки
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('loader').style.display = 'none';
+                const content = document.getElementById('main-content');
+                content.style.display = 'flex';
+                setTimeout(() => { content.style.opacity = '1'; }, 50);
+            }, 2000); // 2 секунды на загрузку
+        });
     </script>
 </body>
 </html>
