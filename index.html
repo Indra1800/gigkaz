@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Gig Casino</title>
+    <!-- ПРАВИЛЬНЫЙ СКРИПТ ТЕЛЕГРАМ -->
+    <script src="https://telegram.org"></script>
+    <style>
+        body {
+            background-color: #0f1721;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: white;
+            font-family: sans-serif;
+            overflow: hidden;
+        }
+        
+        #loader {
+            text-align: center;
+        }
+
+        .loader-icon {
+            width: 80px;
+            filter: drop-shadow(0 0 10px #3390ec);
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.6; }
+        }
+
+        #main-content {
+            display: none; /* Скрыт по умолчанию */
+            text-align: center;
+        }
+
+        .balance-card {
+            background: #1c252f;
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid #3390ec;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ЭКРАН ЗАГРУЗКИ -->
+    <div id="loader">
+        <svg class="loader-icon" viewBox="0 0 24 24" fill="none" xmlns="http://w3.org">
+            <path d="M20 12V22H4V12M18 12V7C18 3.68629 15.3137 1 12 1C8.68629 1 6 3.68629 6 7V12M12 12V17" stroke="#3390ec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+        <p style="color: #3390ec; font-weight: bold; letter-spacing: 1px; margin-top: 15px;">ЗАГРУЗКА...</p>
+    </div>
+
+    <!-- ГЛАВНЫЙ ЭКРАН (появится после загрузки) -->
+    <div id="main-content">
+        <h2 id="welcome-text">Привет!</h2>
+        <div class="balance-card">
+            <p style="margin: 0; opacity: 0.7;">Твой баланс:</p>
+            <h1 style="margin: 10px 0; color: #3390ec;">5 000 💎</h1>
+        </div>
+        <button onclick="alert('Игра скоро будет!')" style="background: #3390ec; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold;">ИГРАТЬ</button>
+    </div>
+
+    <script>
+        // Инициализация
+        const tg = window.Telegram.WebApp;
+        
+        // Сообщаем Телеграму, что приложение готово
+        tg.ready();
+        tg.expand();
+
+        // Устанавливаем цвета интерфейса
+        tg.setHeaderColor('#0f1721');
+        tg.setBackgroundColor('#0f1721');
+
+        // Логика переключения экранов
+        window.addEventListener('DOMContentLoaded', () => {
+            // Берем имя пользователя
+            const userName = tg.initDataUnsafe?.user?.first_name || "Игрок";
+            document.getElementById('welcome-text').innerText = `Привет, ${userName}!`;
+
+            // Имитируем загрузку 2 секунды
+            setTimeout(() => {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
