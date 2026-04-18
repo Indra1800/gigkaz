@@ -92,26 +92,40 @@
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
+       const tg = window.Telegram.WebApp;
 
-        // Инициализация данных пользователя
-        const user = tg.initDataUnsafe?.user;
-        if (user) {
-            document.getElementById('user-name').innerText = user.username ? `@${user.username}` : user.first_name;
-            if (user.photo_url) document.getElementById('user-photo').src = user.photo_url;
-        }
+// Сообщаем Телеграму, что приложение готово сразу
+tg.ready();
+tg.expand();
+tg.setHeaderColor('#0f1721');
 
-        // Логика исчезновения загрузки
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                document.getElementById('loader').style.display = 'none';
-                const content = document.getElementById('main-content');
-                content.style.display = 'flex';
-                setTimeout(() => { content.style.opacity = '1'; }, 50);
-            }, 2000); // 2 секунды на загрузку
-        });
+// Функция скрытия лоадера
+function hideLoader() {
+    const loader = document.getElementById('loader');
+    const content = document.getElementById('main-content');
+    
+    if (loader) {
+        loader.style.display = 'none';
+        content.style.display = 'flex';
+        setTimeout(() => { content.style.opacity = '1'; }, 50);
+    }
+}
+
+// Подтягиваем данные из ТГ
+const user = tg.initDataUnsafe?.user;
+if (user) {
+    document.getElementById('user-name').innerText = user.username ? `@${user.username}` : user.first_name;
+    if (user.photo_url) document.getElementById('user-photo').src = user.photo_url;
+}
+
+// Запускаем таймер скрытия лоадера (3 секунды для красоты)
+setTimeout(hideLoader, 3000);
+
+// На всякий случай дублируем через событие загрузки
+window.onload = () => {
+    console.log("Страница полностью загружена");
+};
+
     </script>
 </body>
 </html>
