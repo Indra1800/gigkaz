@@ -7,7 +7,6 @@
     <script src="https://telegram.org"></script>
     <style>
         :root { --bg-color: #000000; --card-bg: #151515; --accent: #9d4edd; --text-main: #ffffff; --text-gray: #888888; }
-        
         body { background: var(--bg-color); color: var(--text-main); font-family: sans-serif; margin: 0; padding: 0; overflow: hidden; height: 100vh; }
 
         /* ЭКРАН ЗАГРУЗКИ */
@@ -16,116 +15,83 @@
             background-color: #0f1721; display: flex; flex-direction: column;
             justify-content: center; align-items: center; z-index: 9999;
         }
-        .loader-icon {
-            width: 80px; filter: drop-shadow(0 0 10px #3390ec);
-            animation: pulse 1.5s infinite ease-in-out;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 0.6; }
-            50% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(1); opacity: 0.6; }
-        }
+        .loader-icon { width: 80px; filter: drop-shadow(0 0 10px #3390ec); animation: pulse 1.5s infinite ease-in-out; }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.6; } }
 
-        /* ГЛАВНЫЙ КОНТЕНТ (скрыт изначально) */
+        /* ГЛАВНЫЙ КОНТЕНТ */
         #main-content { display: none; flex-direction: column; height: 100vh; opacity: 0; transition: opacity 0.5s ease; }
 
-        /* Стили Профиля */
         .header { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
         .balance-top { background: rgba(157, 78, 221, 0.1); padding: 5px 12px; border-radius: 20px; color: var(--accent); font-weight: bold; }
-        
         .profile-card { background: linear-gradient(180deg, #2d1b4d 0%, #151515 100%); margin: 10px 15px; border-radius: 24px; padding: 25px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
-        .avatar { width: 80px; height: 80px; background: #333; border-radius: 20px; margin: 0 auto 15px; overflow: hidden; }
+        .avatar { width: 80px; height: 80px; background: #333; border-radius: 20px; margin: 0 auto 15px; overflow: hidden; display: flex; align-items: center; justify-content: center;}
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
-        
         .stats-grid { display: flex; justify-content: space-around; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; margin-top: 15px; }
         .stat-item { display: flex; flex-direction: column; }
         .stat-val { font-size: 18px; font-weight: bold; }
         .stat-lbl { font-size: 12px; color: var(--text-gray); }
-
         .action-btn { background: var(--accent); color: white; margin: 10px 15px; padding: 18px; border-radius: 18px; text-align: center; font-weight: bold; cursor: pointer; }
-        
         .nav-bar { margin-top: auto; background: #111; display: flex; justify-content: space-around; padding: 15px 0 30px; border-radius: 30px 30px 0 0; }
     </style>
 </head>
 <body>
 
-    <!-- ЭКРАН ЗАГРУЗКИ -->
     <div id="loader">
         <svg class="loader-icon" viewBox="0 0 24 24" fill="none" xmlns="http://w3.org">
             <path d="M20 12V22H4V12M18 12V7C18 3.68629 15.3137 1 12 1C8.68629 1 6 3.68629 6 7V12M12 12V17" stroke="#3390ec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
         </svg>
-        <p style="color: #3390ec; font-weight: bold; letter-spacing: 1px; margin-top: 15px;">ЗАГРУЗКА...</p>
+        <p style="color: #3390ec; font-weight: bold; margin-top: 15px;">ЗАГРУЗКА...</p>
     </div>
 
-    <!-- ГЛАВНЫЙ ЭКРАН -->
     <div id="main-content">
         <div class="header">
             <div style="font-size: 20px; opacity: 0.5;">⚙️</div>
             <div class="balance-top">💎 <span id="top-balance">5000</span></div>
         </div>
-
         <div class="profile-card">
             <div class="avatar"><img id="user-photo" src="https://placeholder.com" alt=""></div>
-            <div class="username" id="user-name" style="font-size: 20px; font-weight: bold; margin-bottom: 20px;">@Игрок</div>
-            
+            <div id="user-name" style="font-size: 20px; font-weight: bold; margin-bottom: 20px;">@Игрок</div>
             <div class="stats-grid">
-                <div class="stat-item">
-                    <span class="stat-val" id="games-count">0</span>
-                    <span class="stat-lbl">Игры</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-val" id="best-win">0 💎</span>
-                    <span class="stat-lbl">Лучший выигрыш</span>
-                </div>
+                <div class="stat-item"><span class="stat-val" id="games-count">0</span><span class="stat-lbl">Игры</span></div>
+                <div class="stat-item"><span class="stat-val" id="best-win">0 💎</span><span class="stat-lbl">Лучший выигрыш</span></div>
             </div>
         </div>
-
-        <div class="action-btn" onclick="tg.showPopup({message: 'Игры скоро будут!'})">ИГРАТЬ 🚀</div>
-        <div class="action-btn" style="background: #222;" onclick="tg.showPopup({message: 'Статистика в разработке'})">📊 СТАТИСТИКА</div>
-
+        <div class="action-btn" onclick="window.Telegram.WebApp.showAlert('Скоро!')">ИГРАТЬ 🚀</div>
         <div class="nav-bar">
-            <div style="opacity: 0.5">🛒</div>
-            <div style="opacity: 0.5">⚔️</div>
-            <div style="opacity: 0.5">🎁</div>
-            <div style="color: white">👤</div>
+            <div style="opacity: 0.5">🛒</div><div style="opacity: 0.5">⚔️</div><div style="opacity: 0.5">🎁</div><div style="color: white">👤</div>
         </div>
     </div>
 
     <script>
-       const tg = window.Telegram.WebApp;
+        // 1. Сразу пытаемся инициализировать TG
+        const tg = window.Telegram.WebApp;
+        
+        function hideLoader() {
+            document.getElementById('loader').style.display = 'none';
+            const content = document.getElementById('main-content');
+            content.style.display = 'flex';
+            setTimeout(() => { content.style.opacity = '1'; }, 50);
+        }
 
-// Сообщаем Телеграму, что приложение готово сразу
-tg.ready();
-tg.expand();
-tg.setHeaderColor('#0f1721');
+        try {
+            tg.ready();
+            tg.expand();
+            
+            // 2. Безопасно берем данные
+            const user = tg.initDataUnsafe?.user;
+            if (user) {
+                if (user.username) document.getElementById('user-name').innerText = '@' + user.username;
+                else if (user.first_name) document.getElementById('user-name').innerText = user.first_name;
+                
+                if (user.photo_url) document.getElementById('user-photo').src = user.photo_url;
+            }
+        } catch (e) {
+            console.error("Ошибка TG:", e);
+        }
 
-// Функция скрытия лоадера
-function hideLoader() {
-    const loader = document.getElementById('loader');
-    const content = document.getElementById('main-content');
-    
-    if (loader) {
-        loader.style.display = 'none';
-        content.style.display = 'flex';
-        setTimeout(() => { content.style.opacity = '1'; }, 50);
-    }
-}
-
-// Подтягиваем данные из ТГ
-const user = tg.initDataUnsafe?.user;
-if (user) {
-    document.getElementById('user-name').innerText = user.username ? `@${user.username}` : user.first_name;
-    if (user.photo_url) document.getElementById('user-photo').src = user.photo_url;
-}
-
-// Запускаем таймер скрытия лоадера (3 секунды для красоты)
-setTimeout(hideLoader, 3000);
-
-// На всякий случай дублируем через событие загрузки
-window.onload = () => {
-    console.log("Страница полностью загружена");
-};
-
+        // 3. Гарантированное скрытие через 2.5 сек, даже если всё упало
+        setTimeout(hideLoader, 2500);
     </script>
 </body>
 </html>
+
