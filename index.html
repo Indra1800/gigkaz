@@ -7,73 +7,114 @@
     <script src="https://telegram.org"></script>
     <style>
         :root { --bg: #000; --card: #151515; --accent: #9d4edd; --gray: #888; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; height: 100vh; overflow: hidden; }
-        
+        body { background: var(--bg); color: #fff; font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 0; overflow: hidden; height: 100vh; }
+
         /* ЛОАДЕР */
         #loader {
             position: fixed; inset: 0; background: #0f1721;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999;
         }
-        .spinner { width: 40px; height: 40px; border: 4px solid #3390ec33; border-top-color: #3390ec; border-radius: 50%; animation: s 1s infinite linear; }
-        @keyframes s { to { transform: rotate(360deg); } }
+        .spinner { width: 40px; height: 40px; border: 4px solid rgba(51, 144, 236, 0.1); border-top: 4px solid #3390ec; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* МЕНЮ */
-        #app { display: none; flex-direction: column; height: 100vh; }
-        .header { padding: 20px; display: flex; justify-content: space-between; }
-        .bal { color: var(--accent); font-weight: bold; background: #9d4edd1a; padding: 5px 15px; border-radius: 20px; }
-        .card { background: linear-gradient(180deg, #2d1b4d, #151515); margin: 0 20px; padding: 30px; border-radius: 25px; text-align: center; border: 1px solid #ffffff0d; }
-        .ava { width: 80px; height: 80px; background: #333; border-radius: 20px; margin: 0 auto 15px; border: 2px solid var(--accent); }
-        .stats { display: flex; justify-content: space-around; margin-top: 20px; border-top: 1px solid #ffffff1a; padding-top: 20px; }
-        .btn { background: var(--accent); margin: 20px; padding: 18px; border-radius: 20px; text-align: center; font-weight: bold; }
+        /* ОСНОВНОЙ КОНТЕНТ */
+        #main-app { display: none; flex-direction: column; height: 100vh; opacity: 0; transition: opacity 0.5s ease; }
+
+        .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .balance-top { background: rgba(157, 78, 221, 0.1); padding: 6px 14px; border-radius: 20px; color: var(--accent); font-weight: bold; border: 1px solid rgba(157, 78, 221, 0.2); }
+        
+        .profile-card { background: linear-gradient(180deg, #2d1b4d 0%, #151515 100%); margin: 10px 15px; border-radius: 24px; padding: 25px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+        .avatar { width: 85px; height: 85px; background: #222; border-radius: 25px; margin: 0 auto 15px; overflow: hidden; border: 2px solid var(--accent); }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .stats-grid { display: flex; justify-content: space-around; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px; margin-top: 20px; }
+        .stat-item { display: flex; flex-direction: column; gap: 4px; }
+        .stat-val { font-size: 18px; font-weight: 800; }
+        .stat-lbl { font-size: 10px; color: var(--gray); text-transform: uppercase; }
+
+        .btn-play { background: var(--accent); color: white; margin: 20px 15px 10px; padding: 18px; border-radius: 20px; text-align: center; font-weight: 800; font-size: 16px; box-shadow: 0 10px 20px rgba(157, 78, 221, 0.3); }
+        .btn-stats { background: #1a1a1a; color: white; margin: 0 15px; padding: 18px; border-radius: 20px; text-align: center; font-weight: bold; border: 1px solid #333; }
+
+        .nav-bar { margin-top: auto; background: #0a0a0a; display: flex; justify-content: space-around; padding: 15px 0 35px; border-top: 1px solid #1a1a1a; }
+        .nav-item { color: var(--gray); font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .nav-item.active { color: var(--accent); }
     </style>
 </head>
 <body>
 
-<div id="loader">
-    <div class="spinner"></div>
-    <p style="color:#3390ec; margin-top:15px">GIG CASINO</p>
-</div>
-
-<div id="app">
-    <div class="header">
-        <span>⚙️</span>
-        <div class="bal">💎 <span id="b">5 000</span></div>
+    <!-- Экран загрузки -->
+    <div id="loader">
+        <div class="spinner"></div>
+        <p style="color: #3390ec; font-weight: bold; margin-top: 15px; letter-spacing: 2px;">GIG CASINO</p>
     </div>
-    <div class="card">
-        <div class="ava" id="p"></div>
-        <div id="n" style="font-size:20px; font-weight:bold">@Игрок</div>
-        <div class="stats">
-            <div><div id="g">0</div><small style="color:var(--gray)">ИГРЫ</small></div>
-            <div><div id="w">0 💎</div><small style="color:var(--gray)">ВИН</small></div>
+
+    <!-- Главный экран -->
+    <div id="main-app">
+        <div class="header">
+            <div style="font-size: 20px; opacity: 0.6;">⚙️</div>
+            <div class="balance-top">💎 <span id="top-balance">5 000</span></div>
+        </div>
+
+        <div class="profile-card">
+            <div class="avatar"><img id="u-photo" src="https://placeholder.com" alt=""></div>
+            <div id="u-name" style="font-size: 22px; font-weight: 800; margin-bottom: 5px;">@Игрок</div>
+            <div id="u-id" style="font-size: 11px; color: var(--gray); margin-bottom: 20px;">ID: 000000</div>
+            
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-val" id="g-count">0</span>
+                    <span class="stat-lbl">Игры</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-val" id="b-win">0 💎</span>
+                    <span class="stat-lbl">Рекорд</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-play" onclick="window.Telegram.WebApp.showAlert('Арена в разработке!')">ИГРАТЬ 🚀</div>
+        <div class="btn-stats" onclick="window.Telegram.WebApp.showPopup({message: 'Статистика скоро появится'})">📊 СТАТИСТИКА</div>
+
+        <div class="nav-bar">
+            <div class="nav-item"><span>🛒</span>Маркет</div>
+            <div class="nav-item"><span>⚔️</span>Арена</div>
+            <div class="nav-item"><span>🎁</span>Инвентарь</div>
+            <div class="nav-item active"><span>👤</span>Профиль</div>
         </div>
     </div>
-    <div class="btn" onclick="alert('Скоро!')">ИГРАТЬ 🚀</div>
-</div>
 
-<script>
-    // 1. ФУНКЦИЯ ВКЛЮЧЕНИЯ (ОБЯЗАТЕЛЬНО В НАЧАЛЕ)
-    function showApp() {
-        document.getElementById('loader').style.display = 'none';
-        document.getElementById('app').style.display = 'flex';
-    }
-
-    // 2. ГАРАНТИРОВАННЫЙ ТАЙМЕР (ДАЖЕ ЕСЛИ ВСЕ УПАДЕТ)
-    setTimeout(showApp, 2000);
-
-    // 3. ЛОГИКА ТЕЛЕГРАМА (В ТРАЙ-КЭТЧ)
-    try {
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
-        const u = tg.initDataUnsafe?.user;
-        if(u) {
-            document.getElementById('n').innerText = u.username ? '@'+u.username : u.first_name;
-            if(u.photo_url) document.getElementById('p').innerHTML = `<img src="${u.photo_url}" style="width:100%;height:100%;border-radius:20px">`;
+    <script>
+        // Функция переключения экранов
+        function unlockApp() {
+            const loader = document.getElementById('loader');
+            const app = document.getElementById('main-app');
+            if (loader) loader.style.display = 'none';
+            if (app) {
+                app.style.display = 'flex';
+                setTimeout(() => { app.style.opacity = '1'; }, 50);
+            }
         }
-    } catch(e) { 
-        console.log('TG Error'); 
-    }
-</script>
+
+        // Запуск таймера на 2 секунды (гарантирует вход)
+        setTimeout(unlockApp, 2000);
+
+        // Инициализация Telegram
+        try {
+            const tg = window.Telegram.WebApp;
+            tg.ready();
+            tg.expand();
+
+            const user = tg.initDataUnsafe?.user;
+            if (user) {
+                document.getElementById('u-name').innerText = user.username ? '@' + user.username : user.first_name;
+                document.getElementById('u-id').innerText = 'ID: ' + user.id;
+                if (user.photo_url) document.getElementById('u-photo').src = user.photo_url;
+            }
+        } catch (e) {
+            console.error("Telegram init error");
+        }
+    </script>
 </body>
 </html>
+
 
