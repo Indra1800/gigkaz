@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
+<script src="https://unpkg.com"></script>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -92,7 +93,7 @@
             <div id="np" class="n-btn n-active" onclick="go('scr-p')">👤<br>Профиль</div>
         </div>
     </div>
-
+    
     <script>
         // 1. ПЕРЕКЛЮЧАТЕЛЬ ЭКРАНОВ
         function go(id) {
@@ -128,6 +129,22 @@
         } catch(e) { 
             console.log("Telegram API not found, but it's okay.");
         }
+
+        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+    manifestUrl: 'https://github.io',
+    buttonRootId: 'ton-connect-btn' // ID элемента, где будет кнопка
+});
+
+// Следим за подключением кошелька
+tonConnectUI.onStatusChange(wallet => {
+    if (wallet) {
+        const address = wallet.account.address;
+        console.log('Кошелек привязан:', address);
+        // Отправляем адрес боту, чтобы сохранить в базу
+        tg.sendData(JSON.stringify({action: "bind_wallet", address: address}));
+    }
+});
+
     </script>
 </body>
 </html>
