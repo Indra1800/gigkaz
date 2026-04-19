@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Gig Casino</title>
     <!-- Библиотеки (НЕ МЕНЯТЬ) -->
-    <script src="https://telegram-web-app.js"></script>
-    <script src="https://tonconnect-ui.min.js"></script>
+    <script src="https://telegram.org"></script>
+<script src="https://unpkg.com"></script>
+
+    
 
 
     
@@ -141,15 +143,21 @@ const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
 });
 
 tonConnectUI.onStatusChange(wallet => {
-    if (wallet) {
-        const address = wallet.account.address;
-        // Теперь tg доступен везде
-        tg.sendData(JSON.stringify({
-            action: "bind_wallet", 
-            address: address
-        }));
+            if (wallet) {
+                const address = wallet.account.address;
+                tg.sendData(JSON.stringify({
+                    action: "bind_wallet", 
+                    address: address
+                }));
+            }
+        });
+    } catch (e) {
+        console.error("TonConnect Error:", e);
     }
-});
+}
+
+// Запускаем инициализацию сразу
+initTon();
 
     </script>
 </body>
