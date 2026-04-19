@@ -102,53 +102,52 @@
     </div>
     
     <script>
-        // 1. ПЕРЕКЛЮЧАТЕЛЬ ЭКРАНОВ
-        function go(id) {
-            const screens = document.querySelectorAll('.screen');
-            screens.forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            
-            document.getElementById('na').classList.toggle('n-active', id === 'scr-a');
-            document.getElementById('np').classList.toggle('n-active', id === 'scr-p');
-        }
+        // 1. Инициализация (сначала ТГ, потом остальное)
+const tg = window.Telegram.WebApp;
 
-        // 2. ФУНКЦИЯ ЗАПУСКА (УБИРАЕТ ЛОАДЕР)
-        function unlock() {
-            document.getElementById('loader').style.display = 'none';
-            const app = document.getElementById('app');
-            app.style.display = 'flex';
-            setTimeout(() => { app.style.opacity = '1'; }, 50);
-        }
+function go(id) {
+    const screens = document.querySelectorAll('.screen');
+    screens.forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    
+    document.getElementById('na').classList.toggle('n-active', id === 'scr-a');
+    document.getElementById('np').classList.toggle('n-active', id === 'scr-p');
+}
 
-        // ПРИНУДИТЕЛЬНЫЙ ТАЙМЕР (Через 2.5 сек лоадер исчезнет в любом случае)
-        const safetyTimer = setTimeout(unlock, 2500);
+function unlock() {
+    document.getElementById('loader').style.display = 'none';
+    const app = document.getElementById('app');
+    app.style.display = 'flex';
+    setTimeout(() => { app.style.opacity = '1'; }, 50);
+}
 
-        // 3. ПОПЫТКА ИНИЦИАЛИЗАЦИИ ТЕЛЕГРАМА
-        try {
-            const tg = window.Telegram.WebApp;
-            tg.ready();
-            tg.expand();
-            
-            const u = tg.initDataUnsafe?.user;
-            if(u) {
-                document.getElementById('u-name').innerText = u.username ? '@' + u.username : u.first_name;
-            }
-        } catch(e) { 
-            console.log("Telegram API not found, but it's okay.");
-        }
+const safetyTimer = setTimeout(unlock, 2500);
 
-        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+try {
+    tg.ready();
+    tg.expand();
+    const u = tg.initDataUnsafe?.user;
+    if(u) {
+        document.getElementById('u-name').innerText = u.username ? '@' + u.username : u.first_name;
+    }
+} catch(e) { 
+    console.log("Telegram API error");
+}
+
+// 2. Инициализация TON CONNECT (с правильной ссылкой)
+const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
     manifestUrl: 'https://indra1800.github.io/gigkaz/',
-    buttonRootId: 'ton-connect-btn' //
+    buttonRootId: 'ton-connect-btn'
 });
 
-// Следим за подключением кошелька
 tonConnectUI.onStatusChange(wallet => {
     if (wallet) {
         const address = wallet.account.address;
-        console.log('Кошелек привязан:', address);
-        // Отправляем адрес боту, чтобы сохранить в базу
-        tg.sendData(JSON.stringify({action: "bind_wallet", address: address}));
+        // Теперь tg доступен везде
+        tg.sendData(JSON.stringify({
+            action: "bind_wallet", 
+            address: address
+        }));
     }
 });
 
