@@ -266,7 +266,8 @@
                // 5. ОСНОВНАЯ ЛОГИКА ИГРЫ КУБИК
     function startDiceGame(bet) {
         const balLabel = document.getElementById('top-bal');
-        // Очищаем текст баланса от пробелов и символов, чтобы получить число
+        const arenaBal = document.getElementById('arena-bal'); // Находим второй баланс
+        
         let currentBal = parseInt(balLabel.innerText.replace(/[^0-9]/g, ''));
 
         if (currentBal < bet) {
@@ -274,10 +275,11 @@
             return;
         }
 
-        // ШАГ 1: Визуально списываем ставку СРАЗУ
+        // ШАГ 1: Обновляем оба лейбла СРАЗУ
         currentBal -= bet;
-        balLabel.innerText = currentBal.toLocaleString();
-
+        const formattedBal = currentBal.toLocaleString();
+        balLabel.innerText = formattedBal;
+        if (arenaBal) arenaBal.innerText = formattedBal;
         // ШАГ 2: Подготовка элементов оверлея
         const overlay = document.getElementById('dice-overlay');
         const visual = document.getElementById('dice-visual');
@@ -333,41 +335,36 @@
         if (overlay) overlay.style.display = 'none';
         tg.HapticFeedback.impactOccurred('light');
     }
-    // 6. ИНИЦИАЛИЗАЦИЯ TON CONNECT
+       // 6. ИНИЦИАЛИЗАЦИЯ TON CONNECT
     function initTon() {
         try {
             tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
                 manifestUrl: 'https://github.io',
                 buttonRootId: 'ton-connect-btn'
             });
-
-            // Слушаем статус кошелька
-            tonConnectUI.onStatusChange(wallet => {
-                if (wallet) {
-                    tg.sendData(JSON.stringify({
-                        action: "bind_wallet",
-                        address: wallet.account.address
-                    }));
-                    tg.showAlert("✅ Кошелек успешно привязан!");
-                }
-            });
         } catch (e) {
             console.error("TonConnect Error:", e);
         }
     }
 
-    // 7. ЗАПУСК ПРИЛОЖЕНИЯ (ГЛАВНАЯ ТОЧКА ВХОДА)
+    // 8. ФУНКЦИЯ ЗАКРЫТИЯ КУБИКА
+    function closeDice() {
+        const overlay = document.getElementById('dice-overlay');
+        if (overlay) overlay.style.display = 'none';
+        tg.HapticFeedback.impactOccurred('light');
+    }
+// 7. ГЛАВНЫЙ ЗАПУСК ПРИЛОЖЕНИЯ
     window.onload = function() {
-        // Запускаем инициализацию профиля (из Блока 1)
+        // 1. Подгружаем данные юзера
         initApp();
         
-        // Отрисовываем 16 игр на арене (из Блока 3)
+        // 2. Рисуем сетку игр на Арене
         renderGames();
         
-        // Подключаем TON
+        // 3. Подключаем TON кошелек
         initTon();
 
-        // Скрываем загрузочный экран
+        // 4. Логика исчезновения загрузочного экрана (Loader)
         setTimeout(() => {
             const loader = document.getElementById('loader');
             const app = document.getElementById('app');
@@ -378,13 +375,16 @@
                 if (loader) loader.style.display = 'none';
                 if (app) {
                     app.style.display = 'flex';
-                    setTimeout(() => { app.style.opacity = '1'; }, 50);
+                    setTimeout(() => { 
+                        app.style.opacity = '1'; 
+                    }, 50);
                 }
             }, 500);
         }, 2000);
     };
-</script>
 
+    // Закрываем скрипт и документ
+    </script>
 
 </body>
 </html>
