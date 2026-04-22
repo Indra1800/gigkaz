@@ -112,10 +112,10 @@
 
     <!-- 1. ОКНО ИГРЫ В КУБИК (ВЫНЕСЛИ ИЗ #APP ДЛЯ КОРРЕКТНОЙ АНИМАЦИИ) -->
     <div id="dice-overlay">
-        <div id="dice-visual" class="dice">?</div>
-        <h2 id="dice-status" style="margin-top: 25px; color: white;">Крутим...</h2>
-        <button id="dice-close" onclick="closeDice()" style="display:none; background: var(--accent); border: none; color: #fff; padding: 12px 35px; border-radius: 12px; margin-top: 15px; font-weight: bold;">ОК</button>
-    </div>
+    <div id="dice-visual" class="dice">?</div>
+    <h2 id="dice-status">Крутим...</h2>
+    <button id="dice-close" onclick="closeDice()">ОК</button>
+</div>
 
     <div id="app">
         <!-- ЭКРАН 1: ПРОФИЛЬ -->
@@ -228,12 +228,14 @@
             div.style = "background:var(--card); border-radius:20px; padding:20px; border:1px solid #222; text-align:center; position:relative; cursor:pointer;";
             
             div.onclick = () => {
-                tg.HapticFeedback.impactOccurred('medium');
-                if (g.n === "Кубик") {
-                    openBetPopup(); // Открываем выбор ставки
-                } else {
-                    tg.showAlert(`Игра "${g.n}" в разработке 🛠`);
-                }
+    tg.HapticFeedback.impactOccurred('medium');
+    if (g.n === "Кубик") {
+        openBetPopup(); // Сначала вызываем Popup выбора ставки
+    } else {
+        tg.showAlert(`Игра "${g.n}" в разработке 🛠`);
+    }
+};
+
             };
 
             div.innerHTML = `
