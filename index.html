@@ -103,7 +103,6 @@
 
         
     
-</head>
 <body>
 
     <div id="loader">
@@ -111,15 +110,15 @@
         <p style="color:#3390ec; margin-top:15px; font-weight: bold; letter-spacing: 2px;">GIG CASINO</p>
     </div>
 
-    <div id="app">
-
-        <!-- ОКНО ИГРЫ В КУБИК -->
+    <!-- 1. ОКНО ИГРЫ В КУБИК (ВЫНЕСЛИ ИЗ #APP ДЛЯ КОРРЕКТНОЙ АНИМАЦИИ) -->
     <div id="dice-overlay">
         <div id="dice-visual" class="dice">?</div>
-        <h2 id="dice-status" style="margin-top: 25px;">Крутим...</h2>
-        <button id="dice-close" onclick="closeDice()" style="display:none; background: var(--accent); border: none; color: #fff; padding: 10px 30px; border-radius: 10px; margin-top: 15px;">ОК</button>
+        <h2 id="dice-status" style="margin-top: 25px; color: white;">Крутим...</h2>
+        <button id="dice-close" onclick="closeDice()" style="display:none; background: var(--accent); border: none; color: #fff; padding: 12px 35px; border-radius: 12px; margin-top: 15px; font-weight: bold;">ОК</button>
     </div>
-                <!-- ЭКРАН 1: ПРОФИЛЬ -->
+
+    <div id="app">
+        <!-- ЭКРАН 1: ПРОФИЛЬ -->
         <div id="scr-profile" class="screen active">
             <div style="padding: 20px; display: flex; justify-content: space-between; align-items: center;">
                 <div style="font-size: 20px;">⚙️</div>
@@ -130,7 +129,7 @@
 
             <div style="background: linear-gradient(180deg, #2d1b4d 0%, #151515 100%); margin: 10px 15px; border-radius: 28px; padding: 30px 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
                 <div style="width: 85px; height: 85px; background: #222; border-radius: 25px; margin: 0 auto 15px; border: 2px solid var(--accent); overflow: hidden;">
-                    <img id="u-photo" src="https://placeholder.com" style="width: 100%; height: 100%; object-fit: cover;">
+                    <img id="u-photo" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
                 </div>
                 <div id="u-name" style="font-size: 22px; font-weight: 900; margin-bottom: 5px;">@Игрок</div>
                 <div id="u-id" style="font-size: 11px; color: var(--gray); margin-bottom: 20px;">ID: 000000</div>
@@ -141,70 +140,50 @@
                 </div>
             </div>
 
-            <!-- МЕСТО ДЛЯ КНОПКИ КОШЕЛЬКА -->
             <div id="ton-connect-btn"></div>
 
-            <div onclick="showTab('scr-arena')" style="background: var(--accent); color: #fff; margin: 15px; padding: 20px; border-radius: 20px; text-align: center; font-weight: 800; font-size: 16px; cursor: pointer;">ИГРАТЬ 🚀</div>
+            <!-- ИСПОЛЬЗУЕМ КЛАСС btn-main ДЛЯ КОРРЕКТНОГО ЦВЕТА -->
+            <div class="btn-main" onclick="showTab('scr-arena')">ИГРАТЬ 🚀</div>
+            
             <div onclick="window.Telegram.WebApp.showPopup({message:'Статистика в разработке'})" style="background: #151515; color: #fff; margin: 0 15px; padding: 18px; border-radius: 20px; text-align: center; font-weight: bold; border: 1px solid #333; cursor: pointer;">📊 СТАТИСТИКА</div>
         </div>
 
-        <!-- ЭКРАН 2: АРЕНА (16 ИГР) -->
+        <!-- ЭКРАН 2: АРЕНА -->
         <div id="scr-arena" class="screen">
             <div style="padding: 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #000; z-index: 100;">
                 <div onclick="showTab('scr-profile')" style="font-size: 20px;">⬅️</div>
                 <b style="font-size: 18px;">АРЕНА</b>
-                <div style="color: var(--accent); font-weight: bold;">💎 5000</div>
+                <div style="color: var(--accent); font-weight: bold;">💎 <span id="arena-bal">5 000</span></div>
             </div>
-            
-            <div id="games-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 10px 15px;">
-                <!-- Игры создаст скрипт в 3-й части -->
-            </div>
+            <div id="games-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 10px 15px;"></div>
         </div>
 
-        <!-- НИЖНЕЕ МЕНЮ -->
-        <nav style="position: fixed; bottom: 0; width: 100%; background: #0a0a0a; display: flex; justify-content: space-around; padding: 15px 0 35px; border-top: 1px solid #1a1a1a; z-index: 1000;">
-            <div onclick="window.Telegram.WebApp.showAlert('Маркет скоро!')" style="color: var(--gray); font-size: 10px; text-align: center; flex: 1; cursor: pointer;">🛒<br>Маркет</div>
-            <div id="n-arena" onclick="showTab('scr-arena')" style="color: var(--gray); font-size: 10px; text-align: center; flex: 1; cursor: pointer;">⚔️<br>Арена</div>
-            <div onclick="window.Telegram.WebApp.showAlert('Инвентарь пуст')" style="color: var(--gray); font-size: 10px; text-align: center; flex: 1; cursor: pointer;">🎁<br>Склад</div>
-            <div id="n-profile" onclick="showTab('scr-profile')" style="color: white; font-size: 10px; text-align: center; flex: 1; cursor: pointer;">👤<br>Профиль</div>
+        <nav>
+            <div id="n-arena" onclick="showTab('scr-arena')">⚔️<br>Арена</div>
+            <div id="n-profile" onclick="showTab('scr-profile')" style="color: white;">👤<br>Профиль</div>
         </nav>
-
     </div>
 
-       <script>
-    const tg = window.Telegram.WebApp;
-    
-    // Глобальная переменная для TonConnect (чтобы была доступна везде)
-    let tonConnectUI;
+    <script>
+        const tg = window.Telegram.WebApp;
+        let tonConnectUI;
 
-    // 1. ПОДГОТОВКА ПРИЛОЖЕНИЯ
-    function initApp() {
-        try {
-            tg.ready();
-            tg.expand(); // Разворачиваем на весь экран
-
-            // Загружаем данные пользователя
-            const user = tg.initDataUnsafe?.user;
-            if (user) {
-                // Имя пользователя
-                const nameEl = document.getElementById('u-name');
-                if (nameEl) nameEl.innerText = user.username ? '@' + user.username : user.first_name;
-                
-                // ID пользователя
-                const idEl = document.getElementById('u-id');
-                if (idEl) idEl.innerText = 'ID: ' + user.id;
-
-                // Фото профиля
-                const photoEl = document.getElementById('u-photo');
-                if (user.photo_url && photoEl) {
-                    photoEl.src = user.photo_url;
-                    photoEl.style.display = 'block';
+        function initApp() {
+            try {
+                tg.ready();
+                tg.expand();
+                const user = tg.initDataUnsafe?.user;
+                if (user) {
+                    document.getElementById('u-name').innerText = user.username ? '@' + user.username : user.first_name;
+                    document.getElementById('u-id').innerText = 'ID: ' + user.id;
+                    const photoEl = document.getElementById('u-photo');
+                    if (user.photo_url && photoEl) {
+                        photoEl.src = user.photo_url;
+                        photoEl.style.display = 'block';
+                    }
                 }
-            }
-        } catch (e) {
-            console.error("Ошибка инициализации профиля:", e);
+            } catch (e) { console.error("Ошибка профиля:", e); }
         }
-    }
 
                // 2. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
     function showTab(id) {
