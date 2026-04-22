@@ -9,8 +9,9 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 
-    <style>
-       <style>
+    
+  <style>
+    /* 1. ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ */
     :root { 
         --bg: #000; 
         --accent: #9d4edd; 
@@ -18,11 +19,12 @@
         --gray: #888; 
         --success: #4cd137;
         --error: #ff4757;
+        --text: #ffffff;
     }
     
     body { 
         background: var(--bg); 
-        color: #fff; 
+        color: var(--text); 
         font-family: -apple-system, system-ui, sans-serif; 
         margin: 0; 
         padding: 0; 
@@ -30,7 +32,7 @@
         height: 100vh; 
     }
 
-    /* ЭКРАН ЗАГРУЗКИ */
+    /* 2. ЭКРАН ЗАГРУЗКИ */
     #loader { 
         position: fixed; inset: 0; background: #0f1721; 
         display: flex; flex-direction: column; align-items: center; justify-content: center; 
@@ -42,69 +44,65 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* КОНТЕНТ */
+    /* 3. КОНТЕНТ И ЭКРАНЫ */
     #app { display: none; flex-direction: column; height: 100vh; opacity: 0; transition: 0.5s; }
     .screen { display: none; flex-direction: column; height: 100%; overflow-y: auto; padding-bottom: 100px; }
     .active { display: flex !important; }
     
-    /* КНОПКА КОШЕЛЬКА */
-    #ton-connect-btn { margin: 15px; display: flex; justify-content: center; }
-    #ton-connect-btn button { width: 100% !important; border-radius: 16px !important; }
+    /* 4. КНОПКИ (ИСПРАВЛЕНИЕ ЦВЕТА) */
+    .btn-main {
+        background: var(--accent) !important;
+        color: #fff !important;
+        margin: 15px;
+        padding: 20px;
+        border-radius: 20px;
+        text-align: center;
+        font-weight: 800;
+        font-size: 16px;
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 4px 15px rgba(157, 78, 221, 0.3);
+    }
 
-    /* ОКНО ИГРЫ В КУБИК (OVERLAY) */
-    <!-- ОКНО ИГРЫ В КУБИК (OVERLAY) -->
-<div id="dice-overlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(10px);">
-    <!-- Визуальный кубик -->
-    <div id="dice-visual" class="dice">?</div>
+    /* 5. ИНТЕРФЕЙС КУБИКА (OVERLAY) */
+    #dice-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.95);
+        display: none; flex-direction: column; align-items: center; justify-content: center; 
+        z-index: 9999; backdrop-filter: blur(10px);
+    }
     
-    <!-- Статус игры -->
-    <h2 id="dice-status" style="margin-top: 25px; font-weight: 800; letter-spacing: 1px; color: white; text-align: center;">Крутим...</h2>
+    .dice {
+        width: 110px; height: 110px; background: #fff !important; border-radius: 25px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 65px; color: #000 !important; 
+        box-shadow: 0 0 50px var(--accent);
+        z-index: 10000;
+    }
+
+    /* 6. АНИМАЦИЯ КУБИКА */
+    .rolling { 
+        animation: roll 0.12s infinite linear !important; 
+    }
     
-    <!-- Кнопка закрытия (появится после броска) -->
-    <button id="dice-close" onclick="closeDice()" style="display:none; background: var(--accent); border: none; color: #fff; padding: 14px 45px; border-radius: 16px; margin-top: 20px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(157, 78, 221, 0.4);">ПОНЯТНО</button>
-</div>
+    @keyframes roll {
+        0% { transform: rotate(0deg) scale(1); }
+        25% { transform: rotate(90deg) translateY(-5px); }
+        50% { transform: rotate(180deg) scale(1.1); }
+        75% { transform: rotate(270deg) translateY(5px); }
+        100% { transform: rotate(360deg) scale(1); }
+    }
 
-    
-   /* Основной стиль кубика */
-.dice {
-    width: 110px;
-    height: 110px;
-    background: #fff;
-    border-radius: 25px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 65px;
-    color: #000;
-    box-shadow: 0 0 40px var(--accent);
-    transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-/* КЛАСС ДЛЯ ЗАПУСКА АНИМАЦИИ */
-.rolling {
-    animation: roll 0.12s infinite linear !important;
-}
-
-/* САМА АНИМАЦИЯ (Вращение + легкая пульсация) */
-@keyframes roll {
-    0% { transform: rotate(0deg) scale(1); }
-    25% { transform: rotate(90deg) translateY(-5px); }
-    50% { transform: rotate(180deg) scale(1.08); }
-    75% { transform: rotate(270deg) translateY(5px); }
-    100% { transform: rotate(360deg) scale(1); }
-}
-
-
-    /* НИЖНЕЕ МЕНЮ */
+    /* 7. МЕНЮ */
     nav { 
         position: fixed; bottom: 0; width: 100%; background: #0a0a0a; 
         display: flex; justify-content: space-around; padding: 15px 0 35px; 
         border-top: 1px solid #1a1a1a; z-index: 1000; 
     }
-    nav div { cursor: pointer; transition: 0.2s; }
+    nav div { color: var(--gray); font-size: 10px; text-align: center; cursor: pointer; }
 </style>
+
         
-    </style>
+    
 </head>
 <body>
 
