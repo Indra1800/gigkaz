@@ -201,31 +201,56 @@
         };
 
            function playDice() {
-    const bet = 100; // Ставка
+    const bet = 100;
     const balElement = document.getElementById('top-bal');
     let currentBal = parseInt(balElement.innerText.replace(/\s/g, ''));
 
     if (currentBal < bet) {
-        return tg.showAlert("Недостаточно камней! 💎");
+        tg.showAlert("Недостаточно камней! 💎");
+        return;
     }
 
-    const result = Math.floor(Math.random() * 6) + 1; // Бросаем кубик
-    const isWin = (result === 6); // Победа только если выпало 6
-    
-    // Если 6: получаем 300 (чистый плюс 200). Если не 6: теряем 100.
-    const change = isWin ? 200 : -100; 
+    // 1. Сразу визуально списываем ставку
+    currentBal -= bet;
+    balElement.innerText = currentBal.toLocaleString();
 
-    tg.showAlert(`🎲 Выпало: ${result}\n\n${isWin ? '🏆 ВЫИГРЫШ 300 💎!' : '❌ Попробуй еще раз'}`);
+    // 2. Анимация "крутилки" прямо в окне (имитация броска)
+    let counter = 0;
+    let interval = setInterval(() => {
+        counter++;
+        // Просто звук или вибрация для эффекта
+        if (counter % 2 === 0) tg.HapticFeedback.impactOccurred('light');
+        
+        if (counter > 10) { // После 10 смен чисел останавливаемся
+            clearInterval(interval);
+            
+            const result = Math.floor(Math.random() * 6) + 1;
+            const isWin = (result === 6);
+            
+            if (isWin) {
+                const winAmount = bet * 3;
+                currentBal += winAmount;
+                balElement.innerText = currentBal.toLocaleString();
+                tg.HapticFeedback.notificationOccurred('success');
+                alert(`🎲 ВЫПАЛО: 6!\n\nПОЗДРАВЛЯЕМ! Вы выиграли ${winAmount} 💎`);
+            } else {
+                tg.HapticFeedback.notificationOccurred('error');
+                alert(`🎲 ВЫПАЛО: ${result}\n\nУвы, повезет в следующий раз!`);
+            }
 
-    // Отправляем данные в бот (в ту самую функцию из Шага 2)
-    tg.sendData(JSON.stringify({
-        action: "game_result",
-        amount: change
-    }));
-
-    // Обновляем цифру на экране сразу
-    balElement.innerText = (currentBal + change).toLocaleString();
+            // 3. Отправляем данные боту (ВНИМАНИЕ: это закроет приложение)
+            // Чтобы приложение НЕ закрывалось сразу, можно закомментировать строку ниже
+            // или вызывать её только при выходе.
+            setTimeout(() => {
+                tg.sendData(JSON.stringify({
+                    action: "game_result",
+                    amount: isWin ? (bet * 2) : -bet 
+                }));
+            }, 1500); 
+        }
+    }, 100); // Скорость смены чисел — 100мс
 }
+
 
     </script>
 
