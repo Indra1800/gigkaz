@@ -158,266 +158,239 @@
 
        <script>
     const tg = window.Telegram.WebApp;
-    tg.expand(); // Разворачиваем на весь экран
-
-    // 1. ДАННЫЕ ПОЛЬЗОВАТЕЛЯ
-    window.onload = function() {
-        try {
-            tg.ready();
-            const u = tg.initDataUnsafe?.user;
-            if (u) {
-                // Ставим имя и ID
-                document.getElementById('u-name').innerText = u.username ? '@' + u.username : u.first_name;
-                document.getElementById('u-id').innerText = 'ID: ' + u.id;
-                // Ставим аватарку, если она есть
-                if (u.photo_url) {
-                    document.getElementById('u-photo').src = u.photo_url;
-                }
-            }
-        } catch (e) { console.error("Ошибка загрузки профиля:", e); }
-
-        // Инициализация TON CONNECT
-        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-            manifestUrl: 'https://github.io',
-            buttonRootId: 'ton-connect-btn'
-        });
-
-        // Следим за подключением кошелька
-        tonConnectUI.onStatusChange(wallet => {
-            if (wallet) {
-                tg.sendData(JSON.stringify({
-                    action: "bind_wallet",
-                    address: wallet.account.address
-                }));
-            }
-        });
-
-        // Убираем лоадер
-        setTimeout(() => {
-            document.getElementById('loader').style.display = 'none';
-            const app = document.getElementById('app');
-            app.style.display = 'flex';
-            setTimeout(() => { app.style.opacity = '1'; }, 50);
-        }, 1500);
-    };
-
-    // 2. НАВИГАЦИЯ (ТАБЫ)
-    function showTab(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        
-        // Подсветка кнопок меню
-        document.getElementById('n-arena').style.color = (id === 'scr-arena') ? 'var(--accent)' : 'var(--gray)';
-        document.getElementById('n-profile').style.color = (id === 'scr-profile') ? '#fff' : 'var(--gray)';
-        
-        tg.HapticFeedback.impactOccurred('light'); // Вибрация при клике
-    }
-// 3. ПОЛНЫЙ СПИСОК ИГР (16 ШТУК)
-    const gameLibrary = [
-        { n: "Кубик", i: "🎲" },
-        { n: "Слот Классик", i: "🎰" },
-        { n: "Цель", i: "🎯" },
-        { n: "Орел/Решка", i: "🪙" },
-        { n: "Пульс X100", i: "📈" },
-        { n: "Пульс Stable", i: "📉" },
-        { n: "Кейс Крипта", i: "📦" },
-        { n: "Кейс NFT", i: "🖼" },
-        { n: "Слот Золото", i: "💰" },
-        { n: "Слот Фрукты", i: "🍎" },
-        { n: "Слот Египет", i: "🏺" },
-        { n: "Карты", i: "🃏", pvp: true },
-        { n: "Рулетка", i: "🔫", pvp: true },
-        { n: "Портал", i: "🌀" },
-        { n: "Мины", i: "💣" },
-        { n: "Краш", i: "🚀" }
-    ];
-
-    const grid = document.getElementById('games-list');
     
-    // Очищаем сетку перед отрисовкой (на всякий случай)
-    grid.innerHTML = "";
-
-    gameLibrary.forEach(g => {
-        const div = document.createElement('div');
-        div.style = `
-            background: var(--card); 
-            border-radius: 20px; 
-            padding: 20px; 
-            border: 1px solid rgba(255,255,255,0.05); 
-            text-align: center; 
-            position: relative;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        `;
-        
-        // Обработка клика
-        div.onclick = () => {
-            tg.HapticFeedback.impactOccurred('medium');
-            if (g.n === "Кубик") {
-                selectBet(); 
-            } else {
-                tg.showAlert(`Игра "${g.n}" находится в разработке и будет доступна в следующем обновлении! 🛠`);
-            }
-        };
-
-        // Содержимое карточки
-        div.innerHTML = `
-            ${g.pvp ? '<span style="position:absolute; top:8px; right:8px; background:var(--accent); font-size:8px; padding:2px 6px; border-radius:8px; font-weight:bold;">PVP</span>' : ''}
-            <div style="font-size: 38px; margin-bottom: 8px;">${g.i}</div>
-            <div style="font-size: 13px; font-weight: bold; color: #eee;">${g.n}</div>
-        `;
-        
-        grid.appendChild(div);
-    });
-
-    // 4. ВЫБОР СТАВКИ (POPUP)
-    function selectBet() {
-        tg.showPopup({
-            title: 'Ставка на Кубик',
-            message: 'Выберите сумму камней 💎\n\nВыпадет 6 — множитель x3\nОстальное — проигрыш',
-            buttons: [
-                { id: '100', type: 'default', text: '100 💎' },
-                { id: '500', type: 'default', text: '500 💎' },
-                { id: '1000', type: 'default', text: '1000 💎' },
-                { type: 'cancel', text: 'Назад' }
-            ]
-        }, (buttonId) => {
-            if (buttonId && buttonId !== 'cancel') {
-                startDiceGame(parseInt(buttonId));
-            }
-        });
-    }
-
-           // 5. ИНИЦИАЛИЗАЦИЯ TON CONNECT
+    // Глобальная переменная для TonConnect (чтобы была доступна везде)
     let tonConnectUI;
-    function initTon() {
-        try {
-            // Создаем экземпляр TonConnect UI
-            tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-                manifestUrl: 'https://github.io',
-                buttonRootId: 'ton-connect-btn'
-            });
 
-            // Подписываемся на изменения статуса кошелька
-            tonConnectUI.onStatusChange(wallet => {
-                if (wallet) {
-                    const address = wallet.account.address;
-                    const walletName = wallet.device.appName;
-                    
-                    // Отправляем адрес боту для сохранения в БД
-                    tg.sendData(JSON.stringify({
-                        action: "bind_wallet",
-                        address: address
-                    }));
-                    
-                    tg.showAlert(`Кошелек ${walletName} успешно подключен!`);
-                }
-            });
-        } catch (e) {
-            console.error("Ошибка TonConnect:", e);
-        }
-    }
-
-    // 6. ЗАПУСК ПРИЛОЖЕНИЯ ПРИ ЗАГРУЗКЕ
-    window.onload = function() {
+    // 1. ПОДГОТОВКА ПРИЛОЖЕНИЯ
+    function initApp() {
         try {
             tg.ready();
-            tg.expand(); // Разворачиваем Mini App
+            tg.expand(); // Разворачиваем на весь экран
 
-            // Загружаем данные профиля
+            // Загружаем данные пользователя
             const user = tg.initDataUnsafe?.user;
             if (user) {
-                document.getElementById('u-name').innerText = user.username ? '@' + user.username : user.first_name;
-                document.getElementById('u-id').innerText = 'ID: ' + user.id;
+                // Имя пользователя
+                const nameEl = document.getElementById('u-name');
+                if (nameEl) nameEl.innerText = user.username ? '@' + user.username : user.first_name;
                 
-                // Если есть аватарка — ставим её
-                if (user.photo_url) {
-                    const photoEl = document.getElementById('u-photo');
+                // ID пользователя
+                const idEl = document.getElementById('u-id');
+                if (idEl) idEl.innerText = 'ID: ' + user.id;
+
+                // Фото профиля
+                const photoEl = document.getElementById('u-photo');
+                if (user.photo_url && photoEl) {
                     photoEl.src = user.photo_url;
                     photoEl.style.display = 'block';
                 }
             }
+        } catch (e) {
+            console.error("Ошибка инициализации профиля:", e);
+        }
+    }
 
-function startDiceGame(bet) {
+               // 2. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
+    function showTab(id) {
+        // Скрываем все экраны
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        // Показываем нужный
+        const target = document.getElementById(id);
+        if (target) target.classList.add('active');
+        
+        // Подсветка кнопок в меню (если ID совпадает)
+        const nArena = document.getElementById('n-arena');
+        const nProfile = document.getElementById('n-profile');
+        
+        if (nArena) nArena.style.color = (id === 'scr-arena') ? 'var(--accent)' : 'var(--gray)';
+        if (nProfile) nProfile.style.color = (id === 'scr-profile') ? '#fff' : 'var(--gray)';
+        
+        // Тактильная отдача
+        tg.HapticFeedback.impactOccurred('light');
+    }
+
+               // 3. ПОЛНЫЙ СПИСОК ИГР (16 ШТУК)
+    const gameLibrary = [
+        { n: "Кубик", i: "🎲" }, { n: "Слот Классик", i: "🎰" },
+        { n: "Цель", i: "🎯" }, { n: "Орел/Решка", i: "🪙" },
+        { n: "Пульс X100", i: "📈" }, { n: "Пульс Stable", i: "📉" },
+        { n: "Кейс Крипта", i: "📦" }, { n: "Кейс NFT", i: "🖼" },
+        { n: "Слот Золото", i: "💰" }, { n: "Слот Фрукты", i: "🍎" },
+        { n: "Слот Египет", i: "🏺" }, { n: "Карты", i: "🃏", pvp: true },
+        { n: "Рулетка", i: "🔫", pvp: true }, { n: "Портал", i: "🌀" },
+        { n: "Мины", i: "💣" }, { n: "Краш", i: "🚀" }
+    ];
+
+    // Функция отрисовки карточек
+    function renderGames() {
+        const grid = document.getElementById('games-list');
+        if (!grid) return;
+        
+        grid.innerHTML = ""; // Чистим перед рендером
+
+        gameLibrary.forEach(g => {
+            const div = document.createElement('div');
+            div.style = "background:var(--card); border-radius:20px; padding:20px; border:1px solid #222; text-align:center; position:relative; cursor:pointer;";
+            
+            div.onclick = () => {
+                tg.HapticFeedback.impactOccurred('medium');
+                if (g.n === "Кубик") {
+                    openBetPopup(); // Открываем выбор ставки
+                } else {
+                    tg.showAlert(`Игра "${g.n}" в разработке 🛠`);
+                }
+            };
+
+            div.innerHTML = `
+                ${g.pvp ? '<span style="position:absolute;top:8px;right:8px;background:var(--accent);font-size:8px;padding:2px 6px;border-radius:8px;font-weight:bold;">PVP</span>' : ''}
+                <div style="font-size:38px;margin-bottom:10px;">${g.i}</div>
+                <div style="font-size:13px;font-weight:bold;">${g.n}</div>
+            `;
+            grid.appendChild(div);
+        });
+    }
+
+    // 4. ОКНО ВЫБОРА СТАВКИ
+    function openBetPopup() {
+        tg.showPopup({
+            title: 'Ставка на Кубик',
+            message: 'Выберите сумму (Победа x3 при выпадении 6)',
+            buttons: [
+                { id: '100', type: 'default', text: '100 💎' },
+                { id: '500', type: 'default', text: '500 💎' },
+                { id: '1000', type: 'default', text: '1000 💎' },
+                { type: 'cancel', text: 'Отмена' }
+            ]
+        }, (buttonId) => {
+            if (buttonId && buttonId !== 'cancel') {
+                startDiceGame(parseInt(buttonId)); // Переходим к самой игре
+            }
+        });
+    }
+
+               // 5. ОСНОВНАЯ ЛОГИКА ИГРЫ КУБИК
+    function startDiceGame(bet) {
         const balLabel = document.getElementById('top-bal');
-        // Очищаем баланс от пробелов и иконок для расчетов
+        // Очищаем текст баланса от пробелов и символов, чтобы получить число
         let currentBal = parseInt(balLabel.innerText.replace(/[^0-9]/g, ''));
 
         if (currentBal < bet) {
-            tg.showAlert("Недостаточно 💎 для такой ставки!");
+            tg.showAlert("У вас недостаточно камней! 💎");
             return;
         }
 
-        // Списываем ставку визуально
+        // ШАГ 1: Визуально списываем ставку СРАЗУ
         currentBal -= bet;
         balLabel.innerText = currentBal.toLocaleString();
 
+        // ШАГ 2: Подготовка элементов оверлея
         const overlay = document.getElementById('dice-overlay');
         const visual = document.getElementById('dice-visual');
         const status = document.getElementById('dice-status');
         const closeBtn = document.getElementById('dice-close');
 
-        // Включаем анимацию
+        if (!overlay || !visual) return;
+
+        // ШАГ 3: Запуск анимации
         overlay.style.display = 'flex';
-        visual.classList.add('rolling');
+        visual.classList.add('rolling'); // Тот самый класс из CSS
         visual.innerText = "🎲";
-        status.innerText = `Ставка ${bet} 💎 принята...`;
+        status.innerText = "Удача выбирает число...";
         closeBtn.style.display = 'none';
 
-        // Имитация броска
+        // ШАГ 4: Имитация броска (2 секунды)
         setTimeout(() => {
+            // Останавливаем вращение
             visual.classList.remove('rolling');
+            
+            // Генерируем результат (1-6)
             const res = Math.floor(Math.random() * 6) + 1;
-            const faces = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
-            visual.innerText = faces[res];
+            const diceFaces = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+            visual.innerText = diceFaces[res];
 
+            // Проверка условий победы
             if (res === 6) {
-                const win = bet * 3;
-                currentBal += win;
+                const winAmount = bet * 3;
+                currentBal += winAmount;
                 balLabel.innerText = currentBal.toLocaleString();
-                status.innerHTML = `<span style="color:var(--success)">🔥 ПОБЕДА! +${win} 💎</span>`;
+                status.innerHTML = `<span style="color:var(--success)">🔥 ПОБЕДА! +${winAmount} 💎</span>`;
                 tg.HapticFeedback.notificationOccurred('success');
             } else {
                 status.innerHTML = `<span style="color:var(--error)">Выпало ${res}. Проигрыш</span>`;
                 tg.HapticFeedback.notificationOccurred('error');
             }
-            
+
+            // Показываем кнопку выхода
             closeBtn.style.display = 'block';
 
-            // Отправка данных в бот
+            // ШАГ 5: Передача данных боту для сохранения в базу
+            // Важно: это закроет бота, поэтому делаем это только в конце
             tg.sendData(JSON.stringify({
                 action: "game_result",
                 amount: (res === 6) ? (bet * 2) : -bet
             }));
         }, 2000);
     }
-            
-            // Запускаем TON
-            initTon();
 
-            // Скрываем лоадер через 2 секунды
-            setTimeout(() => {
-                const loader = document.getElementById('loader');
-                const app = document.getElementById('app');
-                
-                loader.style.opacity = '0';
-                setTimeout(() => {
-                    loader.style.display = 'none';
-                    app.style.display = 'flex';
-                    setTimeout(() => { app.style.opacity = '1'; }, 50);
-                }, 500);
-            }, 2000);
-
-        } catch (e) {
-            console.error("Ошибка инициализации приложения:", e);
-        }
-    };
-
-    // Вспомогательная функция закрытия оверлея кубика
+    // Функция закрытия окна кубика
     function closeDice() {
-        document.getElementById('dice-overlay').style.display = 'none';
+        const overlay = document.getElementById('dice-overlay');
+        if (overlay) overlay.style.display = 'none';
         tg.HapticFeedback.impactOccurred('light');
     }
+    // 6. ИНИЦИАЛИЗАЦИЯ TON CONNECT
+    function initTon() {
+        try {
+            tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+                manifestUrl: 'https://github.io',
+                buttonRootId: 'ton-connect-btn'
+            });
+
+            // Слушаем статус кошелька
+            tonConnectUI.onStatusChange(wallet => {
+                if (wallet) {
+                    tg.sendData(JSON.stringify({
+                        action: "bind_wallet",
+                        address: wallet.account.address
+                    }));
+                    tg.showAlert("✅ Кошелек успешно привязан!");
+                }
+            });
+        } catch (e) {
+            console.error("TonConnect Error:", e);
+        }
+    }
+
+    // 7. ЗАПУСК ПРИЛОЖЕНИЯ (ГЛАВНАЯ ТОЧКА ВХОДА)
+    window.onload = function() {
+        // Запускаем инициализацию профиля (из Блока 1)
+        initApp();
+        
+        // Отрисовываем 16 игр на арене (из Блока 3)
+        renderGames();
+        
+        // Подключаем TON
+        initTon();
+
+        // Скрываем загрузочный экран
+        setTimeout(() => {
+            const loader = document.getElementById('loader');
+            const app = document.getElementById('app');
+            
+            if (loader) loader.style.opacity = '0';
+            
+            setTimeout(() => {
+                if (loader) loader.style.display = 'none';
+                if (app) {
+                    app.style.display = 'flex';
+                    setTimeout(() => { app.style.opacity = '1'; }, 50);
+                }
+            }, 500);
+        }, 2000);
+    };
 </script>
+
 
 </body>
 </html>
