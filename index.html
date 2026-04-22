@@ -139,7 +139,13 @@
         gameLibrary.forEach(g => {
             const div = document.createElement('div');
             div.style = "background:#121212; border-radius:20px; padding:20px; border:1px solid rgba(255,255,255,0.05); text-align:center; position:relative;";
-            div.onclick = () => tg.showAlert('Запуск ' + g.n + '...');
+            div.onclick = () => {
+    if (g.n === "Кубик") {
+        playDice();
+    } else {
+        tg.showAlert('Запуск ' + g.n + '...');
+    }
+};
             div.innerHTML = `
                 ${g.pvp ? '<span style="position:absolute;top:8px;right:8px;background:#ff4757;font-size:8px;padding:2px 6px;border-radius:8px;">PVP</span>' : ''}
                 <span style="font-size:32px;display:block;margin-bottom:10px;">${g.i}</span>
@@ -193,6 +199,34 @@
                 setTimeout(() => { app.style.opacity = '1'; }, 50);
             }, 2000);
         };
+
+           function playDice() {
+    const bet = 100; // Ставка
+    const balElement = document.getElementById('top-bal');
+    let currentBal = parseInt(balElement.innerText.replace(/\s/g, ''));
+
+    if (currentBal < bet) {
+        return tg.showAlert("Недостаточно камней! 💎");
+    }
+
+    const result = Math.floor(Math.random() * 6) + 1; // Бросаем кубик
+    const isWin = (result === 6); // Победа только если выпало 6
+    
+    // Если 6: получаем 300 (чистый плюс 200). Если не 6: теряем 100.
+    const change = isWin ? 200 : -100; 
+
+    tg.showAlert(`🎲 Выпало: ${result}\n\n${isWin ? '🏆 ВЫИГРЫШ 300 💎!' : '❌ Попробуй еще раз'}`);
+
+    // Отправляем данные в бот (в ту самую функцию из Шага 2)
+    tg.sendData(JSON.stringify({
+        action: "game_result",
+        amount: change
+    }));
+
+    // Обновляем цифру на экране сразу
+    balElement.innerText = (currentBal + change).toLocaleString();
+}
+
     </script>
 
 
