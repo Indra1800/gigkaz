@@ -268,30 +268,62 @@
 
 // 5. ОСНОВНАЯ ЛОГИКА ИГРЫ КУБИК
 function startDiceGame(bet) {
+    const balLabel = document.getElementById('top-bal');
+    const arenaBal = document.getElementById('arena-bal');
     const overlay = document.getElementById('dice-overlay');
     const visual = document.getElementById('dice-visual');
-    
-    // ПРОВЕРКА 3
-    if (!overlay || !visual) {
-        alert("ОШИБКА: Элементы кубика не найдены в HTML!");
+    const status = document.getElementById('dice-status');
+    const closeBtn = document.getElementById('dice-close');
+
+    // 1. Проверка элементов
+    if (!overlay || !visual || !balLabel) {
+        alert("Ошибка: Элементы интерфейса не найдены!");
         return;
     }
 
-    // Показываем окно
+    // 2. Списание баланса
+    let currentBal = parseInt(balLabel.innerText.replace(/[^0-9]/g, ''));
+    if (currentBal < bet) {
+        tg.showAlert("Недостаточно 💎!");
+        return;
+    }
+    currentBal -= bet;
+    balLabel.innerText = currentBal.toLocaleString();
+    if (arenaBal) arenaBal.innerText = currentBal.toLocaleString();
+
+    // 3. Запуск анимации
     overlay.style.display = 'flex';
     visual.classList.add('rolling');
     visual.innerText = "🎲";
-    
-    alert("Анимация должна была запуститься!");
+    status.innerText = "Удача выбирает число...";
+    closeBtn.style.display = 'none';
 
+    // 4. Расчет результата через 2 секунды
     setTimeout(() => {
         visual.classList.remove('rolling');
         const res = Math.floor(Math.random() * 6) + 1;
         const faces = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
         visual.innerText = faces[res];
+
+        if (res === 6) {
+            const win = bet * 3;
+            currentBal += win;
+            balLabel.innerText = currentBal.toLocaleString();
+            if (arenaBal) arenaBal.innerText = currentBal.toLocaleString();
+            status.innerHTML = `<span style="color:var(--success)">🔥 ПОБЕДА! +${win} 💎</span>`;
+            tg.HapticFeedback.notificationOccurred('success');
+        } else {
+            status.innerHTML = `<span style="color:var(--error)">Выпало ${res}.</span>`;
+            tg.HapticFeedback.notificationOccurred('error');
+        }
         
-        document.getElementById('dice-status').innerText = "Выпало: " + res;
-        document.getElementById('dice-close').style.display = 'block';
+        closeBtn.style.display = 'block';
+
+        // 5. ОТПРАВКА ДАННЫХ БОТУ (ВАЖНО!)
+        tg.sendData(JSON.stringify({
+            action: "game_result",
+            amount: (res === 6) ? (bet * 2) : -bet
+        }));
     }, 2000);
 }
 
