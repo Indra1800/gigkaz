@@ -329,23 +329,7 @@ function startDiceGame(bet) {
     }, 2000);
 }
 
-function closeDice() {
-    const overlay = document.getElementById('dice-overlay');
-    if (overlay) overlay.style.display = 'none';
-    tg.HapticFeedback.impactOccurred('light');
-}
 
-       // 6. ИНИЦИАЛИЗАЦИЯ TON CONNECT
-    function initTon() {
-        try {
-            tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-                manifestUrl: 'https://indra1800.github.io/gigkaz/tonconnect-manifest.json',
-                buttonRootId: 'ton-connect-btn'
-            });
-        } catch (e) {
-            console.error("TonConnect Error:", e);
-        }
-    }
 
     // 8. ФУНКЦИЯ ЗАКРЫТИЯ КУБИКА
     function closeDice() {
