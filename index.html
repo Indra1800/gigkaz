@@ -361,29 +361,28 @@ function initTon() {
 }
 
 // 7. ГЛАВНЫЙ ЗАПУСК ПРИЛОЖЕНИЯ
-   window.onload = function() {
-    console.log("Запуск...");
+       window.onload = function() {
+        // 1. Инициализируем данные и интерфейс
+        initApp();
+        renderGames();
+        initTon();
 
-    // Выполняем функции по очереди. Если одна упадет, остальные выживут.
-    try { initApp(); } catch(e) { console.error("Ошибка Профиля:", e); }
-    try { renderGames(); } catch(e) { console.error("Ошибка Игр:", e); }
-    try { initTon(); } catch(e) { console.error("Ошибка TON:", e); }
-
-    // ПРИНУДИТЕЛЬНО убираем лоадер через 1 секунду
-    const loader = document.getElementById('loader');
-    const app = document.getElementById('app');
-
-    if (loader && app) {
+        // 2. Скрываем лоадер через 1.5 секунды
         setTimeout(() => {
-            loader.style.display = 'none';
-            app.style.display = 'flex';
-            app.style.opacity = '1';
-            console.log("Лоадер убран принудительно");
-        }, 1000);
-    } else {
-        alert("Ошибка: Не найдены ID 'loader' или 'app' в HTML!");
-    }
-};
+            const loader = document.getElementById('loader');
+            const app = document.getElementById('app');
+            
+            if (loader) loader.style.display = 'none';
+            
+            if (app) {
+                app.style.display = 'flex';
+                // Плавное проявление (opacity)
+                setTimeout(() => { 
+                    app.style.opacity = '1'; 
+                }, 50);
+            }
+        }, 1500);
+    };
 
     // Закрываем скрипт и документ
     </script>
