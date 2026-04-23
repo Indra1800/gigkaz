@@ -339,33 +339,26 @@ function startDiceGame(bet) {
     }
 // 7. ГЛАВНЫЙ ЗАПУСК ПРИЛОЖЕНИЯ
     window.onload = function() {
-        // 1. Подгружаем данные юзера
-        initApp();
-        
-        // 2. Рисуем сетку игр на Арене
-        renderGames();
-        
-        // 3. Подключаем TON кошелек
-        initTon();
+    // 1. Принудительно убираем лоадер через 1 сек, чтобы увидеть экран
+    setTimeout(() => {
+        const ld = document.getElementById('loader');
+        const ap = document.getElementById('app');
+        if (ld) ld.style.display = 'none';
+        if (ap) {
+            ap.style.display = 'flex';
+            ap.style.opacity = '1';
+        }
+    }, 1000);
 
-        // 4. Логика исчезновения загрузочного экрана (Loader)
-        setTimeout(() => {
-            const loader = document.getElementById('loader');
-            const app = document.getElementById('app');
-            
-            if (loader) loader.style.opacity = '0';
-            
-            setTimeout(() => {
-                if (loader) loader.style.display = 'none';
-                if (app) {
-                    app.style.display = 'flex';
-                    setTimeout(() => { 
-                        app.style.opacity = '1'; 
-                    }, 50);
-                }
-            }, 500);
-        }, 2000);
-    };
+    // 2. Пошаговая проверка (если что-то сломано, выскочит сообщение)
+    try {
+        initApp();
+        renderGames();
+        initTon();
+    } catch (e) {
+        alert("Критическая ошибка в коде: " + e.message);
+    }
+};
 
     // Закрываем скрипт и документ
     </script>
