@@ -111,11 +111,12 @@
     </div>
 
     <!-- 1. ОКНО ИГРЫ В КУБИК (ВЫНЕСЛИ ИЗ #APP ДЛЯ КОРРЕКТНОЙ АНИМАЦИИ) -->
-    <div id="dice-overlay">
-    <div id="dice-visual" class="dice">?</div>
-    <h2 id="dice-status">Крутим...</h2>
-    <button id="dice-close" onclick="closeDice()">ОК</button>
-</div>
+        <div id="dice-overlay">
+        <div id="dice-visual" class="dice">?</div>
+        <h2 id="dice-status" style="color: #ffffff; margin-top: 25px; font-family: sans-serif; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">Крутим...</h2>
+        <button id="dice-close" onclick="closeDice()" style="display:none; background: var(--accent); border: none; color: #ffffff; padding: 12px 40px; border-radius: 12px; margin-top: 20px; font-weight: bold; font-size: 16px; cursor: pointer; box-shadow: 0 4px 20px rgba(157, 78, 221, 0.4);">ОК</button>
+    </div>
+
 
     <div id="app">
         <!-- ЭКРАН 1: ПРОФИЛЬ -->
@@ -247,99 +248,93 @@
     }
 
     // 4. ОКНО ВЫБОРА СТАВКИ
-    function openBetPopup() {
-        tg.showPopup({
-            title: 'Ставка на Кубик',
-            message: 'Выберите сумму (Победа x3 при выпадении 6)',
-            buttons: [
-                { id: '100', type: 'default', text: '100 💎' },
-                { id: '500', type: 'default', text: '500 💎' },
-                { id: '1000', type: 'default', text: '1000 💎' },
-                { type: 'cancel', text: 'Отмена' }
-            ]
-        }, (buttonId) => {
-            if (buttonId && buttonId !== 'cancel') {
-                startDiceGame(parseInt(buttonId)); // Переходим к самой игре
-            }
-        });
+function openBetPopup() {
+    tg.showPopup({
+        title: 'Ставка на Кубик',
+        message: 'Выберите сумму (Победа x3 при выпадении 6)',
+        buttons: [
+            { id: '100', type: 'default', text: '100 💎' },
+            { id: '500', type: 'default', text: '500 💎' },
+            { id: '1000', type: 'default', text: '1000 💎' },
+            { type: 'cancel', text: 'Отмена' }
+        ]
+    }, (buttonId) => {
+        if (buttonId && buttonId !== 'cancel') {
+            startDiceGame(parseInt(buttonId)); 
+        }
+    });
+}
+
+// 5. ОСНОВНАЯ ЛОГИКА ИГРЫ КУБИК
+function startDiceGame(bet) {
+    const balLabel = document.getElementById('top-bal');
+    const arenaBal = document.getElementById('arena-bal');
+    
+    // Очищаем баланс от пробелов и символов
+    let currentBal = parseInt(balLabel.innerText.replace(/[^0-9]/g, ''));
+
+    if (currentBal < bet) {
+        tg.showAlert("У вас недостаточно камней! 💎");
+        return;
     }
 
-               // 5. ОСНОВНАЯ ЛОГИКА ИГРЫ КУБИК
-    function startDiceGame(bet) {
-        function startDiceGame(bet) {
-    alert("Функция старта вызвана! Ставка: " + bet);
-    // ... остальной код
+    // ШАГ 1: Списываем ставку
+    currentBal -= bet;
+    const formattedBal = currentBal.toLocaleString();
+    balLabel.innerText = formattedBal;
+    if (arenaBal) arenaBal.innerText = formattedBal;
 
-        const balLabel = document.getElementById('top-bal');
-        const arenaBal = document.getElementById('arena-bal'); // Находим второй баланс
-        
-        let currentBal = parseInt(balLabel.innerText.replace(/[^0-9]/g, ''));
+    // ШАГ 2: Элементы оверлея
+    const overlay = document.getElementById('dice-overlay');
+    const visual = document.getElementById('dice-visual');
+    const status = document.getElementById('dice-status');
+    const closeBtn = document.getElementById('dice-close');
 
-        if (currentBal < bet) {
-            tg.showAlert("У вас недостаточно камней! 💎");
-            return;
+    if (!overlay || !visual) return;
+
+    // ШАГ 3: Запуск анимации
+    overlay.style.display = 'flex';
+    visual.classList.add('rolling');
+    visual.innerText = "🎲";
+    status.innerText = "Удача выбирает число...";
+    closeBtn.style.display = 'none';
+
+    // ШАГ 4: Имитация броска
+    setTimeout(() => {
+        visual.classList.remove('rolling');
+        const res = Math.floor(Math.random() * 6) + 1;
+        const diceFaces = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+        visual.innerText = diceFaces[res];
+
+        if (res === 6) {
+            const winAmount = bet * 3;
+            currentBal += winAmount;
+            const winBal = currentBal.toLocaleString();
+            balLabel.innerText = winBal;
+            if (arenaBal) arenaBal.innerText = winBal;
+            status.innerHTML = `<span style="color:var(--success)">🔥 ПОБЕДА! +${winAmount} 💎</span>`;
+            tg.HapticFeedback.notificationOccurred('success');
+        } else {
+            status.innerHTML = `<span style="color:var(--error)">Выпало ${res}. Проигрыш</span>`;
+            tg.HapticFeedback.notificationOccurred('error');
         }
 
-        // ШАГ 1: Обновляем оба лейбла СРАЗУ
-        currentBal -= bet;
-        const formattedBal = currentBal.toLocaleString();
-        balLabel.innerText = formattedBal;
-        if (arenaBal) arenaBal.innerText = formattedBal;
-        // ШАГ 2: Подготовка элементов оверлея
-        const overlay = document.getElementById('dice-overlay');
-        const visual = document.getElementById('dice-visual');
-        const status = document.getElementById('dice-status');
-        const closeBtn = document.getElementById('dice-close');
+        closeBtn.style.display = 'block';
 
-        if (!overlay || !visual) return;
+        // Отправка данных боту
+        tg.sendData(JSON.stringify({
+            action: "game_result",
+            amount: (res === 6) ? (bet * 2) : -bet
+        }));
+    }, 2000);
+}
 
-        // ШАГ 3: Запуск анимации
-        overlay.style.display = 'flex';
-        visual.classList.add('rolling'); // Тот самый класс из CSS
-        visual.innerText = "🎲";
-        status.innerText = "Удача выбирает число...";
-        closeBtn.style.display = 'none';
+function closeDice() {
+    const overlay = document.getElementById('dice-overlay');
+    if (overlay) overlay.style.display = 'none';
+    tg.HapticFeedback.impactOccurred('light');
+}
 
-        // ШАГ 4: Имитация броска (2 секунды)
-        setTimeout(() => {
-            // Останавливаем вращение
-            visual.classList.remove('rolling');
-            
-            // Генерируем результат (1-6)
-            const res = Math.floor(Math.random() * 6) + 1;
-            const diceFaces = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
-            visual.innerText = diceFaces[res];
-
-            // Проверка условий победы
-            if (res === 6) {
-                const winAmount = bet * 3;
-                currentBal += winAmount;
-                balLabel.innerText = currentBal.toLocaleString();
-                status.innerHTML = `<span style="color:var(--success)">🔥 ПОБЕДА! +${winAmount} 💎</span>`;
-                tg.HapticFeedback.notificationOccurred('success');
-            } else {
-                status.innerHTML = `<span style="color:var(--error)">Выпало ${res}. Проигрыш</span>`;
-                tg.HapticFeedback.notificationOccurred('error');
-            }
-
-            // Показываем кнопку выхода
-            closeBtn.style.display = 'block';
-
-            // ШАГ 5: Передача данных боту для сохранения в базу
-            // Важно: это закроет бота, поэтому делаем это только в конце
-            tg.sendData(JSON.stringify({
-                action: "game_result",
-                amount: (res === 6) ? (bet * 2) : -bet
-            }));
-        }, 2000);
-    }
-
-    // Функция закрытия окна кубика
-    function closeDice() {
-        const overlay = document.getElementById('dice-overlay');
-        if (overlay) overlay.style.display = 'none';
-        tg.HapticFeedback.impactOccurred('light');
-    }
        // 6. ИНИЦИАЛИЗАЦИЯ TON CONNECT
     function initTon() {
         try {
