@@ -220,17 +220,22 @@
     // Функция отрисовки карточек
         function renderGames() {
         const grid = document.getElementById('games-list');
-        if (!grid) return;
-        
+        if (!grid) {
+            alert("Ошибка: Не найден games-list в HTML!");
+            return;
+        }
         grid.innerHTML = ""; 
 
         gameLibrary.forEach(g => {
             const div = document.createElement('div');
             div.style = "background:var(--card); border-radius:20px; padding:20px; border:1px solid #222; text-align:center; position:relative; cursor:pointer;";
             
-            // ИСПРАВЛЕННЫЙ КЛИК
             div.onclick = () => {
+                // ТЕСТ: Выводит название игры при клике
+                alert("Вы нажали на: " + g.n);
+                
                 tg.HapticFeedback.impactOccurred('medium');
+                
                 if (g.n === "Кубик") {
                     openBetPopup(); 
                 } else {
