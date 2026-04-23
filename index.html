@@ -228,13 +228,15 @@
             div.style = "background:var(--card); border-radius:20px; padding:20px; border:1px solid #222; text-align:center; position:relative; cursor:pointer;";
             
             div.onclick = () => {
-                tg.HapticFeedback.impactOccurred('medium');
-               if (g.n.includes("Кубик") || g.i === "🎲") {
-                    openBetPopup(); 
-                } else {
-                    tg.showAlert(`Игра "${g.n}" в разработке 🛠`);
-                }
-            }; 
+    tg.HapticFeedback.impactOccurred('medium');
+    // Проверяем и по названию, и по эмодзи одновременно
+    if (g.i === "🎲" || g.n.includes("Кубик")) {
+        openBetPopup();
+    } else {
+        tg.showAlert(`Игра "${g.n}" в разработке 🛠`);
+    }
+};
+
 
             div.innerHTML = `
                 ${g.pvp ? '<span style="position:absolute;top:8px;right:8px;background:var(--accent);font-size:8px;padding:2px 6px;border-radius:8px;font-weight:bold;">PVP</span>' : ''}
@@ -246,25 +248,25 @@
     }
 
 
-        // 4. ОКНО ВЫБОРА СТАВКИ
-   function openBetPopup() {
-    console.log("Пытаюсь открыть окно ставки...");
-    
-    // Если это окно НЕ появится, значит проблема в библиотеке Telegram
+// 4. ОКНО ВЫБОРА СТАВКИ
+function openBetPopup() {
+    // Если это окно НЕ выскочит, значит проблема в renderGames
+    alert("Клик по иконке засчитан!"); 
+
     tg.showPopup({
-        title: 'Выбор ставки',
-        message: 'Выберите сумму:',
+        title: '🎰 Выбор ставки',
+        message: 'Выберите сумму (Победа x3 при выпадении 6)',
         buttons: [
-            {id: '100', type: 'default', text: '100 💎'},
-            {type: 'cancel', text: 'Отмена'}
+            { id: '100', type: 'default', text: '100 💎' },
+            { id: '500', type: 'default', text: '500 💎' },
+            { type: 'cancel', text: 'Отмена' }
         ]
-    }, function(id) {
+    }, (id) => {
         if (id && id !== 'cancel') {
             startDiceGame(parseInt(id));
         }
     });
 }
-
 
 // 5. ОСНОВНАЯ ЛОГИКА ИГРЫ КУБИК
 function startDiceGame(bet) {
@@ -275,30 +277,30 @@ function startDiceGame(bet) {
     const status = document.getElementById('dice-status');
     const closeBtn = document.getElementById('dice-close');
 
-    // 1. Проверка элементов
+    // Проверка элементов (если выскочит этот алерт - проверь ID в HTML)
     if (!overlay || !visual || !balLabel) {
-        alert("Ошибка: Элементы интерфейса не найдены!");
+        alert("Ошибка: Элементы кубика не найдены в HTML!");
         return;
     }
 
-    // 2. Списание баланса
     let currentBal = parseInt(balLabel.innerText.replace(/[^0-9]/g, ''));
     if (currentBal < bet) {
         tg.showAlert("Недостаточно 💎!");
         return;
     }
+
+    // Списание
     currentBal -= bet;
     balLabel.innerText = currentBal.toLocaleString();
     if (arenaBal) arenaBal.innerText = currentBal.toLocaleString();
 
-    // 3. Запуск анимации
+    // Запуск
     overlay.style.display = 'flex';
     visual.classList.add('rolling');
     visual.innerText = "🎲";
     status.innerText = "Удача выбирает число...";
     closeBtn.style.display = 'none';
 
-    // 4. Расчет результата через 2 секунды
     setTimeout(() => {
         visual.classList.remove('rolling');
         const res = Math.floor(Math.random() * 6) + 1;
@@ -316,10 +318,8 @@ function startDiceGame(bet) {
             status.innerHTML = `<span style="color:var(--error)">Выпало ${res}.</span>`;
             tg.HapticFeedback.notificationOccurred('error');
         }
-        
         closeBtn.style.display = 'block';
 
-        // 5. ОТПРАВКА ДАННЫХ БОТУ (ВАЖНО!)
         tg.sendData(JSON.stringify({
             action: "game_result",
             amount: (res === 6) ? (bet * 2) : -bet
