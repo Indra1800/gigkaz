@@ -253,27 +253,47 @@
     }
 
     // 4. ОКНО ВЫБОРА СТАВКИ
-function openBetPopup() {
-    // ПРОВЕРКА 1
-    alert("Нажали на иконку кубика!"); 
-    
-    tg.showPopup({
-        title: 'Ставка на Кубик',
-        message: 'Выберите сумму',
-        buttons: [
-            { id: '100', type: 'default', text: '100 💎' },
-            { id: '500', type: 'default', text: '500 💎' },
-            { type: 'cancel', text: 'Отмена' }
-        ]
-    }, (buttonId) => {
-        if (buttonId && buttonId !== 'cancel') {
-            // ПРОВЕРКА 2
-            alert("Выбрали ставку: " + buttonId);
-            startDiceGame(parseInt(buttonId)); 
+  function openBetPopup() {
+        // Проверяем, видит ли скрипт библиотеку Telegram
+        if (!tg.showPopup) {
+            alert("Библиотека Telegram не загружена!");
+            return;
         }
-    });
-}
 
+        tg.showPopup({
+            title: 'Ставка на Кубик',
+            message: 'Выберите сумму',
+            buttons: [
+                { id: '100', type: 'default', text: '100 💎' },
+                { id: '500', type: 'default', text: '500 💎' },
+                { type: 'cancel', text: 'Отмена' }
+            ]
+        }, (id) => {
+            if (id && id !== 'cancel') {
+                startDiceGame(parseInt(id)); 
+            }
+        });
+    }  function openBetPopup() {
+        // Проверяем, видит ли скрипт библиотеку Telegram
+        if (!tg.showPopup) {
+            alert("Библиотека Telegram не загружена!");
+            return;
+        }
+
+        tg.showPopup({
+            title: 'Ставка на Кубик',
+            message: 'Выберите сумму',
+            buttons: [
+                { id: '100', type: 'default', text: '100 💎' },
+                { id: '500', type: 'default', text: '500 💎' },
+                { type: 'cancel', text: 'Отмена' }
+            ]
+        }, (id) => {
+            if (id && id !== 'cancel') {
+                startDiceGame(parseInt(id)); 
+            }
+        });
+    }
 // 5. ОСНОВНАЯ ЛОГИКА ИГРЫ КУБИК
 function startDiceGame(bet) {
     const overlay = document.getElementById('dice-overlay');
