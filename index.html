@@ -229,7 +229,7 @@
             
             div.onclick = () => {
                 tg.HapticFeedback.impactOccurred('medium');
-                if (g.n.includes("Кубик")) {
+               if (g.n.includes("Кубик") || g.i === "🎲") {
                     openBetPopup(); 
                 } else {
                     tg.showAlert(`Игра "${g.n}" в разработке 🛠`);
