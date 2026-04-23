@@ -338,25 +338,27 @@ function startDiceGame(bet) {
         tg.HapticFeedback.impactOccurred('light');
     }
 // 7. ГЛАВНЫЙ ЗАПУСК ПРИЛОЖЕНИЯ
-    window.onload = function() {
-    // 1. Принудительно убираем лоадер через 1 сек, чтобы увидеть экран
-    setTimeout(() => {
-        const ld = document.getElementById('loader');
-        const ap = document.getElementById('app');
-        if (ld) ld.style.display = 'none';
-        if (ap) {
-            ap.style.display = 'flex';
-            ap.style.opacity = '1';
-        }
-    }, 1000);
+   window.onload = function() {
+    console.log("Запуск...");
 
-    // 2. Пошаговая проверка (если что-то сломано, выскочит сообщение)
-    try {
-        initApp();
-        renderGames();
-        initTon();
-    } catch (e) {
-        alert("Критическая ошибка в коде: " + e.message);
+    // Выполняем функции по очереди. Если одна упадет, остальные выживут.
+    try { initApp(); } catch(e) { console.error("Ошибка Профиля:", e); }
+    try { renderGames(); } catch(e) { console.error("Ошибка Игр:", e); }
+    try { initTon(); } catch(e) { console.error("Ошибка TON:", e); }
+
+    // ПРИНУДИТЕЛЬНО убираем лоадер через 1 секунду
+    const loader = document.getElementById('loader');
+    const app = document.getElementById('app');
+
+    if (loader && app) {
+        setTimeout(() => {
+            loader.style.display = 'none';
+            app.style.display = 'flex';
+            app.style.opacity = '1';
+            console.log("Лоадер убран принудительно");
+        }, 1000);
+    } else {
+        alert("Ошибка: Не найдены ID 'loader' или 'app' в HTML!");
     }
 };
 
