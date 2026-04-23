@@ -235,7 +235,7 @@
                 } else {
                     tg.showAlert(`Игра "${g.n}" в разработке 🛠`);
                 }
-            }; // Здесь была лишняя скобка ниже, я её убрал
+            }; 
 
             div.innerHTML = `
                 ${g.pvp ? '<span style="position:absolute;top:8px;right:8px;background:var(--accent);font-size:8px;padding:2px 6px;border-radius:8px;font-weight:bold;">PVP</span>' : ''}
@@ -266,6 +266,10 @@
 
                // 5. ОСНОВНАЯ ЛОГИКА ИГРЫ КУБИК
     function startDiceGame(bet) {
+        function startDiceGame(bet) {
+    alert("Функция старта вызвана! Ставка: " + bet);
+    // ... остальной код
+
         const balLabel = document.getElementById('top-bal');
         const arenaBal = document.getElementById('arena-bal'); // Находим второй баланс
         
