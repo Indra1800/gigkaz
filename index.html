@@ -101,7 +101,7 @@
     nav div { color: var(--gray); font-size: 10px; text-align: center; cursor: pointer; }
 </style>
 
-        
+</head>      
     
 <body>
 
@@ -217,26 +217,25 @@
     ];
 
     // Функция отрисовки карточек
-    function renderGames() {
+        function renderGames() {
         const grid = document.getElementById('games-list');
         if (!grid) return;
         
-        grid.innerHTML = ""; // Чистим перед рендером
+        grid.innerHTML = ""; 
 
         gameLibrary.forEach(g => {
             const div = document.createElement('div');
             div.style = "background:var(--card); border-radius:20px; padding:20px; border:1px solid #222; text-align:center; position:relative; cursor:pointer;";
             
+            // ИСПРАВЛЕННЫЙ КЛИК
             div.onclick = () => {
-    tg.HapticFeedback.impactOccurred('medium');
-    if (g.n === "Кубик") {
-        openBetPopup(); // Сначала вызываем Popup выбора ставки
-    } else {
-        tg.showAlert(`Игра "${g.n}" в разработке 🛠`);
-    }
-};
-
-            };
+                tg.HapticFeedback.impactOccurred('medium');
+                if (g.n === "Кубик") {
+                    openBetPopup(); 
+                } else {
+                    tg.showAlert(`Игра "${g.n}" в разработке 🛠`);
+                }
+            }; // Здесь была лишняя скобка ниже, я её убрал
 
             div.innerHTML = `
                 ${g.pvp ? '<span style="position:absolute;top:8px;right:8px;background:var(--accent);font-size:8px;padding:2px 6px;border-radius:8px;font-weight:bold;">PVP</span>' : ''}
@@ -341,7 +340,7 @@
     function initTon() {
         try {
             tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-                manifestUrl: 'https://github.io',
+                manifestUrl: 'https://github.io/tonconnect-manifest.json',
                 buttonRootId: 'ton-connect-btn'
             });
         } catch (e) {
