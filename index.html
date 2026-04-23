@@ -250,32 +250,36 @@
 
 // 4. ОКНО ВЫБОРА СТАВКИ
 function openBetPopup() {
-    // Вызываем окно ввода текста
     tg.showPopup({
-        title: '💎 Ваша ставка',
-        message: 'Введите сумму ставки (Победа x3 при выпадении 6):',
+        title: '💎 Ставка на Кубик',
+        message: 'Выберите сумму или введите свою:',
         buttons: [
-            { id: 'custom', type: 'default', text: 'Ввести сумму' },
+            { id: '100', type: 'default', text: '100 💎' },
+            { id: '500', type: 'default', text: '500 💎' },
+            { id: 'custom', type: 'default', text: '✍️ Своя ставка' },
             { type: 'cancel', text: 'Отмена' }
         ]
     }, (id) => {
+        if (!id || id === 'cancel') return;
+
         if (id === 'custom') {
-            // Если нажали "Ввести сумму", открываем Prompt
+            // Окно для ввода произвольного числа
             const userBet = prompt("Сколько 💎 ставим?", "100");
-            
-            if (userBet !== null && userBet !== "") {
-                const betAmount = parseInt(userBet);
-                
-                // Проверка: число ли это и больше ли оно нуля
+            if (userBet) {
+                const betAmount = parseInt(userBet.replace(/\s/g, ''));
                 if (!isNaN(betAmount) && betAmount > 0) {
                     startDiceGame(betAmount);
                 } else {
-                    tg.showAlert("❌ Пожалуйста, введите корректное число!");
+                    tg.showAlert("❌ Введите корректное число!");
                 }
             }
+        } else {
+            // Если выбрали готовую кнопку (100 или 500)
+            startDiceGame(parseInt(id));
         }
     });
 }
+
 
 
 // 5. ОСНОВНАЯ ЛОГИКА ИГРЫ КУБИК
