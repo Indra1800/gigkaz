@@ -230,7 +230,8 @@
             div.onclick = () => {
     tg.HapticFeedback.impactOccurred('medium');
     // Проверяем и по названию, и по эмодзи одновременно
-    if (g.i === "🎲" || g.n.includes("Кубик")) {
+    if (g.i === "🎲" || g.n.toLowerCase().includes("кубик"))
+ {
         openBetPopup();
     } else {
         tg.showAlert(`Игра "${g.n}" в разработке 🛠`);
