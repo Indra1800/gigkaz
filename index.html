@@ -207,7 +207,7 @@
 
                // 3. ПОЛНЫЙ СПИСОК ИГР (16 ШТУК)
     const gameLibrary = [
-        { n: "Кубик", i: "🎲" }, { n: "Слот Классик", i: "🎰" },
+        { n: "Кости", i: "🎲" }, { n: "Слот Классик", i: "🎰" },
         { n: "Цель", i: "🎯" }, { n: "Орел/Решка", i: "🪙" },
         { n: "Пульс X100", i: "📈" }, { n: "Пульс Stable", i: "📉" },
         { n: "Кейс Крипта", i: "📦" }, { n: "Кейс NFT", i: "🖼" },
@@ -230,7 +230,7 @@
             div.onclick = () => {
     tg.HapticFeedback.impactOccurred('medium');
     // Проверяем и по названию, и по эмодзи одновременно
-    if (g.i === "🎲" || g.n.toLowerCase().includes("Кубик"))
+    if (g.i === "🎲" || g.n.toLowerCase().includes("Кости"))
  {
         openBetPopup();
     } else {
