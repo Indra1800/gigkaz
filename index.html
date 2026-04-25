@@ -712,10 +712,8 @@ let isRocketFlying = false;
 function startRocket(bet) {
     rocketBet = bet;
     currentX = 1.00;
-    isRocketFlying = true;
+    isRocketFlying = false; // Пока идет отсчет, лететь нельзя
     
-    // Генерируем точку взрыва (математика краша)
-    // Вероятность: чем выше X, тем ниже шанс до него дойти
     const r = Math.random();
     crashPoint = Math.max(1, (0.99 / (1 - r))).toFixed(2);
     
@@ -725,38 +723,61 @@ function startRocket(bet) {
     const multText = document.getElementById('rocket-multiplier');
     const profitText = document.getElementById('rocket-profit');
     const rocketObj = document.getElementById('rocket-obj');
-    const stars = document.getElementById('stars-container');
 
     overlay.style.display = 'flex';
     overlay.style.background = 'skyblue';
-    stars.innerHTML = '';
-    cashBtn.style.display = 'inline-block';
-    closeBtn.style.display = 'none';
-    rocketObj.style.transform = 'translateY(0) scale(1)';
-    multText.style.color = 'white';
+    document.getElementById('stars-container').innerHTML = '';
     
-    // Списание баланса (уже должно быть в твоей функции обертки)
-    updateUIBalance(getRawBalance() - bet);
+    cashBtn.style.display = 'none'; // Прячем кнопку забрать во время отсчета
+    closeBtn.style.display = 'none';
+    rocketObj.style.transform = 'translateY(0)';
+    multText.style.color = 'white';
+
+    // ОТСЧЕТ 3 СЕКУНДЫ
+    let countdown = 3;
+    multText.innerText = countdown;
+    profitText.innerText = "Приготовьтесь...";
+
+    let countdownInterval = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+            multText.innerText = countdown;
+            tg.HapticFeedback.impactOccurred('medium');
+        } else {
+            clearInterval(countdownInterval);
+            launchRocket(bet, multText, profitText, cashBtn, rocketObj);
+        }
+    }, 1000);
+}
+
+// Вынесли запуск в отдельную функцию для чистоты
+function launchRocket(bet, multText, profitText, cashBtn, rocketObj) {
+    isRocketFlying = true;
+    cashBtn.style.display = 'inline-block';
+    multText.innerText = "1.00x";
+    tg.HapticFeedback.notificationOccurred('success'); // Вибрация на старт
+
+    const overlay = document.getElementById('rocket-overlay');
+    const stars = document.getElementById('stars-container');
 
     rocketInterval = setInterval(() => {
-        currentX += 0.01 + (currentX * 0.005); // Плавное ускорение роста
+        currentX += 0.01 + (currentX * 0.005);
         const displayX = currentX.toFixed(2);
         
         multText.innerText = displayX + "x";
         profitText.innerText = "Выплата: " + Math.floor(bet * displayX) + " 💎";
         
-        // Эффект неба
-        if (currentX > 1.5) overlay.style.background = '#1e3799'; // Синее
-        if (currentX > 3.0) overlay.style.background = '#0c2461'; // Темно-синее
+        // Смена неба
+        if (currentX > 1.5) overlay.style.background = '#1e3799';
+        if (currentX > 3.0) overlay.style.background = '#0c2461';
         if (currentX > 5.0) {
-            overlay.style.background = '#0a0a0a'; // Космос
-            if (stars.children.length < 20) createStar(); // Появляются звезды
+            overlay.style.background = '#0a0a0a';
+            if (stars.children.length < 20) createStar();
         }
 
-        // Дрожание ракеты
-        rocketObj.style.transform = `translateY(${Math.sin(Date.now()/50)*5}px) scale(${1 + currentX/100})`;
+        // Тряска ракеты
+        rocketObj.style.transform = `translateY(${Math.sin(Date.now()/50)*5}px)`;
 
-        // ПРОВЕРКА КРАША
         if (currentX >= crashPoint) {
             rocketCrash();
         }
