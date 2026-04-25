@@ -381,7 +381,7 @@
     const val = prompt("Орел или Решка?:", "100");
     if (val) {
         const amount = parseInt(val.replace(/\D/g, ''));
-        if (amount > 0) playCoin(amount);
+        if (amount > 0) startCoinGame(amount);
     }
 }       
 
