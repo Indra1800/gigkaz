@@ -265,27 +265,22 @@
 
 // 4. ОКНО ВЫБОРА СТАВКИ
 function openBetPopup() {
-    try {
-        const webapp = window.Telegram.WebApp;
-
-        webapp.showPopup({
-            title: '💎 Выберите ставку',
-            message: 'Нажмите на нужную сумму:',
-            buttons: [
-                { id: '100', type: 'default', text: '100 💎' },
-                { id: '500', type: 'default', text: '500 💎' },
-                { id: '1000', type: 'default', text: '1000 💎' }, // Добавили
-                { id: '5000', type: 'default', text: '5000 💎' }, // Добавили
-                { type: 'cancel', text: 'Отмена' }
-            ]
-        }, (id) => {
-            if (id && id !== 'cancel') {
-                startDiceGame(parseInt(id));
+    // Вместо сложного Popup используем обычный confirm или кнопки прямо на экране
+    const custom = confirm("Хотите ввести свою сумму ставки? \n(ОК - ввести вручную, Отмена - выбрать 500)");
+    
+    if (custom) {
+        const userVal = prompt("Введите сумму ставки:", "100");
+        if (userVal) {
+            const amount = parseInt(userVal.replace(/\D/g, ''));
+            if (amount > 0) {
+                startDiceGame(amount);
+            } else {
+                alert("Ошибка: введите число!");
             }
-        });
-    } catch (e) {
-        // Если даже это упадет - значит проблема в самом вызове метода
-        alert("Ошибка окна: " + e.message);
+        }
+    } else {
+        // Если нажал "Отмена", просто ставим 500 по умолчанию или 100
+        startDiceGame(500);
     }
 }
 
