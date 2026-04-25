@@ -298,54 +298,57 @@ function startDiceGame(bet) {
     const status = document.getElementById('dice-status');
     const closeBtn = document.getElementById('dice-close');
 
-    // Проверка элементов (если выскочит этот алерт - проверь ID в HTML)
-    if (!overlay || !visual || !balLabel) {
-        alert("Ошибка: Элементы кубика не найдены в HTML!");
-        return;
-    }
-
-    let currentBal = parseInt(balLabel.innerText.replace(/[^0-9]/g, ''));
+    let currentBal = parseInt(balLabel.innerText.replace(/\s/g, ''));
     if (currentBal < bet) {
         tg.showAlert("Недостаточно 💎!");
         return;
     }
 
-    // Списание
+    // Списание баланса
     currentBal -= bet;
     balLabel.innerText = currentBal.toLocaleString();
     if (arenaBal) arenaBal.innerText = currentBal.toLocaleString();
 
-    // Запуск
+    // ЗАПУСК АНИМАЦИИ
     overlay.style.display = 'flex';
     visual.classList.add('rolling');
-    visual.innerText = "🎲";
-    status.innerText = "Удача выбирает число...";
+    status.innerText = "Кубик катится...";
     closeBtn.style.display = 'none';
 
-    setTimeout(() => {
-        visual.classList.remove('rolling');
-        const res = Math.floor(Math.random() * 6) + 1;
-        const faces = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
-        visual.innerText = faces[res];
+    // ЭФФЕКТ "МЕЛЬКАНИЯ" ЦИФР
+    const faces = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+    let flicker = setInterval(() => {
+        visual.innerText = faces[Math.floor(Math.random() * faces.length)];
+    }, 80); // Меняем грань каждые 80мс
 
-        if (res === 6) {
-            const win = bet * 3;
+    setTimeout(() => {
+        clearInterval(flicker); // Останавливаем мелькание
+        visual.classList.remove('rolling');
+        
+        const res = Math.floor(Math.random() * 6) + 1;
+        visual.innerText = faces[res - 1]; // Показываем финальный результат
+
+        // Логика победы (пусть победа будет на 4, 5, 6 для интереса)
+        if (res >= 4) {
+            const win = bet * 2;
             currentBal += win;
-            balLabel.innerText = currentBal.toLocaleString();
-            if (arenaBal) arenaBal.innerText = currentBal.toLocaleString();
-            status.innerHTML = `<span style="color:var(--success)">🔥 ПОБЕДА! +${win} 💎</span>`;
+            status.innerHTML = `<span style="color:#4cd137">🔥 ПОБЕДА! +${win}</span>`;
             tg.HapticFeedback.notificationOccurred('success');
         } else {
-            status.innerHTML = `<span style="color:var(--error)">Выпало ${res}.</span>`;
+            status.innerHTML = `<span style="color:#ff4757">Выпало ${res}. Проигрыш</span>`;
             tg.HapticFeedback.notificationOccurred('error');
         }
+
+        balLabel.innerText = currentBal.toLocaleString();
+        if (arenaBal) arenaBal.innerText = currentBal.toLocaleString();
         closeBtn.style.display = 'block';
 
+        // Отправка в бот
         tg.sendData(JSON.stringify({
             action: "game_result",
-            amount: (res === 6) ? (bet * 2) : -bet
+            amount: (res >= 4) ? (bet) : -bet
         }));
-    }, 2000);
+    }, 1800); // Общее время броска
 }
 
 
