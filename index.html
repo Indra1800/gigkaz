@@ -248,7 +248,7 @@
            div.onclick = () => {
     if (g.n.includes("Кубик") || g.n.includes("Кости")) {
         openBetPopup(); // Твой старый prompt
-    } else if (g.n.includes("Слот")) {
+    } else if (g.n.includes("Слот Классик")) {
         // Спрашиваем ставку и запускаем слоты
         const val = prompt("Ставка на Слоты:", "100");
         if (val) startSlots(parseInt(val));
