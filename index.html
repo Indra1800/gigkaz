@@ -304,7 +304,7 @@ function startDiceGame(bet) {
         return;
     }
 
-    // Списание баланса
+    // Списываем ставку сразу
     currentBal -= bet;
     balLabel.innerText = currentBal.toLocaleString();
     if (arenaBal) arenaBal.innerText = currentBal.toLocaleString();
@@ -312,45 +312,50 @@ function startDiceGame(bet) {
     // ЗАПУСК АНИМАЦИИ
     overlay.style.display = 'flex';
     visual.classList.add('rolling');
-    status.innerText = "Кубик катится...";
+    status.innerText = "Испытываем удачу...";
     closeBtn.style.display = 'none';
 
-    // ЭФФЕКТ "МЕЛЬКАНИЯ" ЦИФР
+    // ЭФФЕКТ МЕЛЬКАНИЯ ГРАНЕЙ
     const faces = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
     let flicker = setInterval(() => {
         visual.innerText = faces[Math.floor(Math.random() * faces.length)];
-    }, 80); // Меняем грань каждые 80мс
+    }, 80);
 
     setTimeout(() => {
-        clearInterval(flicker); // Останавливаем мелькание
+        clearInterval(flicker);
         visual.classList.remove('rolling');
         
-        const res = Math.floor(Math.random() * 6) + 1;
-        visual.innerText = faces[res - 1]; // Показываем финальный результат
+        const res = Math.floor(Math.random() * 6) + 1; // 1-6
+        visual.innerText = faces[res - 1];
 
-        // Логика победы (пусть победа будет на 4, 5, 6 для интереса)
-        if (res >= 4) {
-            const win = bet * 2;
-            currentBal += win;
-            status.innerHTML = `<span style="color:#4cd137">🔥 ПОБЕДА! +${win}</span>`;
+        let changeForDb = -bet; // По умолчанию проигрыш для базы
+
+        if (res === 6) {
+            // ПОБЕДА: Тройная выплата
+            const winAmount = bet * 3;
+            currentBal += winAmount;
+            changeForDb = winAmount - bet; // Чистая прибыль (например, +200 при ставке 100)
+            
+            status.innerHTML = `<span style="color:#4cd137">🔥 ДЖЕКПОТ! +${winAmount} 💎</span>`;
             tg.HapticFeedback.notificationOccurred('success');
         } else {
-            status.innerHTML = `<span style="color:#ff4757">Выпало ${res}. Проигрыш</span>`;
+            // ПРОИГРЫШ
+            status.innerHTML = `<span style="color:#ff4757">Выпало ${res}. Попробуй еще раз!</span>`;
             tg.HapticFeedback.notificationOccurred('error');
         }
 
+        // Обновляем визуальный баланс
         balLabel.innerText = currentBal.toLocaleString();
         if (arenaBal) arenaBal.innerText = currentBal.toLocaleString();
         closeBtn.style.display = 'block';
 
-        // Отправка в бот
+        // Отправляем результат в бот для обновления SQLite
         tg.sendData(JSON.stringify({
             action: "game_result",
-            amount: (res >= 4) ? (bet) : -bet
+            amount: changeForDb
         }));
-    }, 1800); // Общее время броска
+    }, 1800);
 }
-
 
     // 8. ФУНКЦИЯ ЗАКРЫТИЯ КУБИКА
     function closeDice() {
