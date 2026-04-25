@@ -219,6 +219,26 @@
     </div>
 </div>
 
+<div id="coin-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:9999; flex-direction:column; align-items:center; justify-content:center; backdrop-filter:blur(10px); font-family:sans-serif;">
+    <div style="text-align:center;">
+        <!-- Контейнер для анимации монетки -->
+        <div id="coin-box" style="width:120px; height:120px; margin:0 auto 40px; position:relative; transition: transform 2s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d;">
+            <div id="coin-front" style="position:absolute; inset:0; background:#f1c40f; border-radius:50%; border:5px solid #f39c12; display:flex; align-items:center; justify-content:center; font-size:50px; backface-visibility: hidden;">🟡</div>
+            <div id="coin-back" style="position:absolute; inset:0; background:#bdc3c7; border-radius:50%; border:5px solid #95a5a6; display:flex; align-items:center; justify-content:center; font-size:50px; backface-visibility: hidden; transform: rotateY(180deg);">⚪️</div>
+        </div>
+
+        <h2 id="coin-status" style="color:white; margin-bottom:20px;">Выберите сторону:</h2>
+        
+        <div id="coin-controls" style="display:flex; gap:15px;">
+            <button onclick="playCoin('heads')" style="background:#f1c40f; border:none; padding:15px 30px; border-radius:15px; font-weight:bold; cursor:pointer;">ОРЕЛ (🟡)</button>
+            <button onclick="playCoin('tails')" style="background:#bdc3c7; border:none; padding:15px 30px; border-radius:15px; font-weight:bold; cursor:pointer;">РЕШКА (⚪️)</button>
+        </div>
+
+        <button id="coin-close" onclick="closeCoin()" style="display:none; background:var(--accent); border:none; color:white; padding:12px 40px; border-radius:15px; margin-top:20px; font-weight:bold; cursor:pointer;">ВЫХОД</button>
+    </div>
+</div>
+
+
     
     <div id="app">
         <!-- ЭКРАН 1: ПРОФИЛЬ -->
@@ -357,6 +377,13 @@
         if (amount > 0) startRocket(amount);
     }
 }
+      else if (name.includes("орел") || name.includes("решк")) {
+    const val = prompt("Орел или Решка?:", "100");
+    if (val) {
+        const amount = parseInt(val.replace(/\D/g, ''));
+        if (amount > 0) playCoin(amount);
+    }
+}       
 
     else {
         tg.showAlert(`Игра "${g.n}" в разработке 🛠`);
@@ -857,7 +884,78 @@ function closeRocket() {
     document.getElementById('rocket-obj').innerText = "🚀";
 }
 
-       
+
+
+       /*МОНЕТКА*/
+       let currentCoinBet = 0;
+
+function startCoinGame(bet) {
+    const bal = getRawBalance();
+    if (bal < bet) return tg.showAlert("Недостаточно 💎!");
+    
+    currentCoinBet = bet;
+    updateUIBalance(bal - bet); // Списываем сразу
+
+    document.getElementById('coin-overlay').style.display = 'flex';
+    document.getElementById('coin-controls').style.display = 'flex';
+    document.getElementById('coin-close').style.display = 'none';
+    document.getElementById('coin-status').innerText = "Орел или Решка?";
+    document.getElementById('coin-box').style.transform = "rotateY(0)";
+}
+
+function playCoin(userChoice) {
+    const box = document.getElementById('coin-box');
+    const status = document.getElementById('coin-status');
+    const controls = document.getElementById('coin-controls');
+    
+    controls.style.display = 'none';
+    status.innerText = "Монетка в воздухе...";
+    tg.HapticFeedback.impactOccurred('medium');
+
+    // 1. ЛОГИКА ШАНСОВ
+    let result; // heads или tails
+    const rand = Math.random() * 100;
+
+    if (currentCoinBet <= 1000) {
+        // Честные 50/50
+        result = (rand > 50) ? 'heads' : 'tails';
+    } else {
+        // Подкрутка: 30% на победу, 70% на проигрыш
+        const winChance = 30;
+        const shouldWin = rand <= winChance;
+        result = shouldWin ? userChoice : (userChoice === 'heads' ? 'tails' : 'heads');
+    }
+
+    // 2. АНИМАЦИЯ (вращаем монетку несколько раз)
+    const spins = 5; // количество полных оборотов
+    const finalDegree = result === 'heads' ? (spins * 360) : (spins * 360 + 180);
+    box.style.transform = `rotateY(${finalDegree}deg)`;
+
+    // 3. ФИНАЛ
+    setTimeout(() => {
+        let isWin = userChoice === result;
+        let change = -currentCoinBet;
+
+        if (isWin) {
+            const winAmount = currentCoinBet * 2;
+            change = winAmount - currentCoinBet;
+            status.innerHTML = `<span style="color:#4cd137">ПОБЕДА! +${winAmount} 💎</span>`;
+            updateUIBalance(getRawBalance() + winAmount);
+            tg.HapticFeedback.notificationOccurred('success');
+        } else {
+            status.innerHTML = `<span style="color:#ff4757">ПРОИГРЫШ...</span>`;
+            tg.HapticFeedback.notificationOccurred('error');
+        }
+
+        document.getElementById('coin-close').style.display = 'inline-block';
+        tg.sendData(JSON.stringify({ action: "game_result", amount: change }));
+    }, 2000);
+}
+
+function closeCoin() {
+    document.getElementById('coin-overlay').style.display = 'none';
+}
+
        
 // 7. ГЛАВНЫЙ ЗАПУСК ПРИЛОЖЕНИЯ
        window.onload = function() {
