@@ -265,22 +265,26 @@
 
 // 4. ОКНО ВЫБОРА СТАВКИ
 function openBetPopup() {
-    // Вместо сложного Popup используем обычный confirm или кнопки прямо на экране
-    const custom = confirm("Хотите ввести свою сумму ставки? \n(ОК - ввести вручную, Отмена - выбрать 500)");
+    // 1. Сразу спрашиваем сумму
+    const userVal = prompt("Введите сумму ставки 💎:", "100");
     
-    if (custom) {
-        const userVal = prompt("Введите сумму ставки:", "100");
-        if (userVal) {
-            const amount = parseInt(userVal.replace(/\D/g, ''));
-            if (amount > 0) {
-                startDiceGame(amount);
+    // 2. Если пользователь не нажал "Отмена"
+    if (userVal !== null && userVal !== "") {
+        // Очищаем ввод от букв и пробелов
+        const amount = parseInt(userVal.replace(/\D/g, ''));
+        
+        // 3. Проверяем, что введено число больше 0
+        if (!isNaN(amount) && amount > 0) {
+            // Запускаем игру
+            startDiceGame(amount);
+        } else {
+            // Если ввел ерунду - выводим предупреждение
+            if (window.Telegram?.WebApp?.showAlert) {
+                tg.showAlert("❌ Пожалуйста, введите корректное число!");
             } else {
-                alert("Ошибка: введите число!");
+                alert("❌ Введите корректное число!");
             }
         }
-    } else {
-        // Если нажал "Отмена", просто ставим 500 по умолчанию или 100
-        startDiceGame(500);
     }
 }
 
