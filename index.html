@@ -207,7 +207,7 @@
 
                // 3. ПОЛНЫЙ СПИСОК ИГР (16 ШТУК)
     const gameLibrary = [
-        { n: "Кости", i: "🎲" }, { n: "Слот Классик", i: "🎰" },
+        { n: "Кубик", i: "🎲" }, { n: "Слот Классик", i: "🎰" },
         { n: "Цель", i: "🎯" }, { n: "Орел/Решка", i: "🪙" },
         { n: "Пульс X100", i: "📈" }, { n: "Пульс Stable", i: "📉" },
         { n: "Кейс Крипта", i: "📦" }, { n: "Кейс NFT", i: "🖼" },
@@ -228,12 +228,26 @@
             div.style = "background:var(--card); border-radius:20px; padding:20px; border:1px solid #222; text-align:center; position:relative; cursor:pointer;";
             
             div.onclick = () => {
+    // 1. Сначала просто вибрируем (раз на другие игры работает, значит tg.HapticFeedback жив)
     tg.HapticFeedback.impactOccurred('medium');
-    // Проверяем и по названию, и по эмодзи одновременно
-    if (g.i === "🎲" || g.n.toLowerCase().includes("Кости"))
- {
-        openBetPopup();
+
+    // 2. Печатаем в консоль (для отладки), что именно видит скрипт
+    console.log("Проверяем игру:", g.n);
+
+    // 3. УЛЬТРА-ПРОВЕРКА (ищем слово "кост", "кубик" или эмодзи кубика)
+    const name = g.n.toLowerCase();
+    const isDice = name.includes("кост") || name.includes("кубик") || g.i === "🎲";
+
+    if (isDice) {
+        // Если зашло сюда — значит распознал!
+        // Пробуем запустить, перехватив ошибку
+        try {
+            openBetPopup();
+        } catch (e) {
+            alert("Ошибка внутри openBetPopup: " + e.message);
+        }
     } else {
+        // Если не распознал как кости — покажет это
         tg.showAlert(`Игра "${g.n}" в разработке 🛠`);
     }
 };
