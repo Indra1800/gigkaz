@@ -265,8 +265,9 @@
 
 // 4. ОКНО ВЫБОРА СТАВКИ
 function openBetPopup() {
-    const webapp = window.Telegram.WebApp;
     try {
+        const webapp = window.Telegram.WebApp;
+        
         webapp.showPopup({
             title: '🎲 Ставка',
             message: 'Выберите сумму или введите свою:',
@@ -274,41 +275,38 @@ function openBetPopup() {
                 { id: '100', type: 'default', text: '100 💎' },
                 { id: '500', type: 'default', text: '500 💎' },
                 { id: 'custom', type: 'default', text: '✍️ Своя сумма' },
-                { type: 'cancel', text: 'Отмена' }
+                { id: 'cancel', type: 'cancel', text: 'Отмена' }
             ]
-        }, function(buttonId) {
-            // Важно: выносим логику из колбэка через setTimeout, 
-            // чтобы не было конфликта закрывающихся окон
-            setTimeout(() => {
-                if (!buttonId || buttonId === 'cancel') return;
+        }, function(btnId) {
+            // Выполняем через небольшую паузу, чтобы Telegram успел закрыть попап
+            setTimeout(function() {
+                if (!btnId || btnId === 'cancel') return;
 
-                if (buttonId === 'custom') {
+                if (btnId === 'custom') {
                     openCustomBetInput();
                 } else {
-                    startDiceGame(parseInt(buttonId));
+                    startDiceGame(parseInt(btnId));
                 }
-            }, 100);
+            }, 150);
         });
     } catch (e) {
-        alert("Ошибка окна ставки: " + e.message);
+        alert("Сбой окна: " + e.message);
     }
 }
 
 function openCustomBetInput() {
-    // В Telegram Mini Apps prompt иногда блокируется. 
-    // Если prompt выдает ошибку, используем упрощенный ввод.
-    try {
-        const amount = window.prompt("Введите сумму ставки:", "100");
-        if (amount) {
-            const cleanAmount = parseInt(amount.replace(/\D/g, ''));
-            if (!isNaN(cleanAmount) && cleanAmount > 0) {
-                startDiceGame(cleanAmount);
-            } else {
-                window.Telegram.WebApp.showAlert("Введите число!");
-            }
+    // Используем стандартный prompt
+    const val = prompt("Введите сумму ставки:", "100");
+    
+    if (val !== null && val !== "") {
+        // Очищаем от всего, кроме цифр
+        const num = parseInt(val.replace(/\D/g, ''));
+        
+        if (num > 0) {
+            startDiceGame(num);
+        } else {
+            alert("Введите число больше 0");
         }
-    } catch (e) {
-        alert("Ваш телефон блокирует ввод текста. Выберите из списка!");
     }
 }
 
