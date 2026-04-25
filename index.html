@@ -117,7 +117,25 @@
         <button id="dice-close" onclick="closeDice()" style="display:none; background: var(--accent); border: none; color: #ffffff; padding: 12px 40px; border-radius: 12px; margin-top: 20px; font-weight: bold; font-size: 16px; cursor: pointer; box-shadow: 0 4px 20px rgba(157, 78, 221, 0.4);">ОК</button>
     </div>
 
+ <!-- 2. ОКНО ИГРЫ СЛОТЫ -->
+<div id="slots-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999; flex-direction:column; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
+    <div style="background:linear-gradient(180deg, #2d1b4d 0%, #151515 100%); padding:30px; border-radius:30px; border:2px solid var(--accent); text-align:center; width:85%;">
+        <h2 style="color:white; margin-bottom:20px; letter-spacing:2px;">GIG SLOTS</h2>
+        
+        <!-- Барабаны -->
+        <div style="display:flex; justify-content:center; gap:10px; background:#000; padding:20px; border-radius:20px; border:1px solid #333; margin-bottom:20px; font-size:50px;">
+            <div id="reel1">🍓</div>
+            <div id="reel2">💎</div>
+            <div id="reel3">🍒</div>
+        </div>
 
+        <h3 id="slots-status" style="color:white; min-height:1.5em;">Удачи!</h3>
+        <button id="slots-close" onclick="closeSlots()" style="display:none; background:var(--accent); border:none; color:white; padding:12px 30px; border-radius:12px; margin-top:15px; font-weight:bold;">ОК</button>
+    </div>
+</div>
+
+
+    
     <div id="app">
         <!-- ЭКРАН 1: ПРОФИЛЬ -->
         <div id="scr-profile" class="screen active">
@@ -227,30 +245,18 @@
             const div = document.createElement('div');
             div.style = "background:var(--card); border-radius:20px; padding:20px; border:1px solid #222; text-align:center; position:relative; cursor:pointer;";
             
-            div.onclick = () => {
-    // 1. Сначала просто вибрируем (раз на другие игры работает, значит tg.HapticFeedback жив)
-    tg.HapticFeedback.impactOccurred('medium');
-
-    // 2. Печатаем в консоль (для отладки), что именно видит скрипт
-    console.log("Проверяем игру:", g.n);
-
-    // 3. УЛЬТРА-ПРОВЕРКА (ищем слово "кост", "кубик" или эмодзи кубика)
-    const name = g.n.toLowerCase();
-    const isDice = name.includes("кост") || name.includes("Кубик") || g.i === "🎲";
-
-    if (isDice) {
-        // Если зашло сюда — значит распознал!
-        // Пробуем запустить, перехватив ошибку
-        try {
-            openBetPopup();
-        } catch (e) {
-            alert("Ошибка внутри openBetPopup: " + e.message);
-        }
+           div.onclick = () => {
+    if (g.n.includes("Кубик") || g.n.includes("Кости")) {
+        openBetPopup(); // Твой старый prompt
+    } else if (g.n.includes("Слот")) {
+        // Спрашиваем ставку и запускаем слоты
+        const val = prompt("Ставка на Слоты:", "100");
+        if (val) startSlots(parseInt(val));
     } else {
-        // Если не распознал как кости — покажет это
-        tg.showAlert(`Игра "${g.n}" в разработке 🛠`);
+        tg.showAlert("В разработке...");
     }
 };
+
 
 
             div.innerHTML = `
@@ -386,6 +392,89 @@ function initTon() {
     }
 }
 
+
+const symbols = ["🍓", "🍒", "💎", "🍋", "🍇", "GIG", "777"];
+// Веса (чем чаще символ, тем больше его в массиве для рандома)
+const reelPool = ["🍓","🍓","🍒","🍒","💎","💎","🍋","🍋","🍇","🍇","GIG","777"];
+
+function startSlots(bet) {
+    const visual = [document.getElementById('reel1'), document.getElementById('reel2'), document.getElementById('reel3')];
+    const status = document.getElementById('slots-status');
+    const closeBtn = document.getElementById('slots-close');
+    const sndSpin = document.getElementById('snd-spin');
+    const sndWin = document.getElementById('snd-win');
+
+    document.getElementById('slots-overlay').style.display = 'flex';
+    closeBtn.style.display = 'none';
+    status.innerText = "Крутим...";
+    
+    if(sndSpin) sndSpin.play();
+
+    let spins = 0;
+    let interval = setInterval(() => {
+        visual.forEach(r => {
+            r.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+            r.style.transform = `translateY(${Math.random() * 5}px)`;
+        });
+        spins++;
+        if (spins > 20) {
+            clearInterval(interval);
+            finishSlots(bet, visual, status, closeBtn, sndWin);
+        }
+    }, 100);
+}
+
+function finishSlots(bet, visual, status, closeBtn, sndWin) {
+    // Генерируем финальный результат с учетом редкости
+    const res = [
+        reelPool[Math.floor(Math.random() * reelPool.length)],
+        reelPool[Math.floor(Math.random() * reelPool.length)],
+        reelPool[Math.floor(Math.random() * reelPool.length)]
+    ];
+
+    visual.forEach((r, i) => {
+        r.innerText = res[i];
+        r.style.transform = "translateY(0)";
+    });
+
+    let multiplier = 0;
+    const combo = res.join('');
+
+    if (res[0] === res[1] && res[1] === res[2]) {
+        if (res[0] === "777") multiplier = 5;
+        else if (res[0] === "GIG") multiplier = 3;
+        else if (res[0] === "🍓") multiplier = 2;
+        else multiplier = 1.5; // За любые другие 3 одинаковых
+    }
+
+    let change = -bet;
+    if (multiplier > 0) {
+        const win = bet * multiplier;
+        change = win - bet;
+        status.innerHTML = `<span style="color:#4cd137">ВЫИГРЫШ: ${win} 💎</span>`;
+        if(sndWin) sndWin.play();
+        tg.HapticFeedback.notificationOccurred('success');
+    } else {
+        status.innerHTML = `<span style="color:#ff4757">Попробуй еще раз!</span>`;
+    }
+
+    closeBtn.style.display = 'block';
+    updateVisualBalance(change);
+    
+    tg.sendData(JSON.stringify({ action: "game_result", amount: change }));
+}
+
+function closeSlots() {
+    document.getElementById('slots-overlay').style.display = 'none';
+}
+
+function updateVisualBalance(change) {
+    const bal = document.getElementById('top-bal');
+    let current = parseInt(bal.innerText.replace(/\s/g, ''));
+    bal.innerText = (current + change).toLocaleString();
+}
+
+       
 // 7. ГЛАВНЫЙ ЗАПУСК ПРИЛОЖЕНИЯ
        window.onload = function() {
         // 1. Инициализируем данные и интерфейс
