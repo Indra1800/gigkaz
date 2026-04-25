@@ -267,32 +267,38 @@
 function openBetPopup() {
     try {
         const webapp = window.Telegram.WebApp;
-        
-        webapp.showPopup({
-            title: '🎲 Ставка',
-            message: 'Выберите сумму или введите свою:',
-            buttons: [
-                { id: '100', type: 'default', text: '100 💎' },
-                { id: '500', type: 'default', text: '500 💎' },
-                { id: 'custom', type: 'default', text: '✍️ Своя сумма' },
-                { id: 'cancel', type: 'cancel', text: 'Отмена' }
-            ]
-        }, function(btnId) {
-            // Выполняем через небольшую паузу, чтобы Telegram успел закрыть попап
-            setTimeout(function() {
-                if (!btnId || btnId === 'cancel') return;
 
-                if (btnId === 'custom') {
-                    openCustomBetInput();
-                } else {
-                    startDiceGame(parseInt(btnId));
-                }
-            }, 150);
+        // Максимально упрощенный конфиг без лишних полей
+        const params = {
+            title: "Ставка",
+            message: "Выберите сумму:",
+            buttons: [
+                { id: "100", type: "default", text: "100 💎" },
+                { id: "500", type: "default", text: "500 💎" },
+                { id: "custom", type: "default", text: "Своя сумма" },
+                { type: "cancel", text: "Отмена" }
+            ]
+        };
+
+        webapp.showPopup(params, function(id) {
+            if (id === "custom") {
+                // Используем задержку, чтобы старое окно полностью закрылось
+                setTimeout(() => {
+                    const val = prompt("Введите сумму:");
+                    if (val) {
+                        const num = parseInt(val.replace(/\D/g, ''));
+                        if (num > 0) startDiceGame(num);
+                    }
+                }, 200);
+            } else if (id && id !== "cancel") {
+                startDiceGame(parseInt(id));
+            }
         });
     } catch (e) {
-        alert("Сбой окна: " + e.message);
+        alert("Ошибка: " + e.message);
     }
 }
+
 
 function openCustomBetInput() {
     // Используем стандартный prompt
