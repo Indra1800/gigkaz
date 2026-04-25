@@ -99,6 +99,50 @@
         border-top: 1px solid #1a1a1a; z-index: 1000; 
     }
     nav div { color: var(--gray); font-size: 10px; text-align: center; cursor: pointer; }
+
+.slot-machine {
+    background: #222;
+    border: 5px solid #444;
+    border-radius: 20px;
+    padding: 15px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    box-shadow: inset 0 0 20px #000;
+}
+
+.reel {
+    width: 70px;
+    height: 100px;
+    background: #fff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 50px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+}
+
+/* Красивая надпись GIG */
+.symbol-gig {
+    font-weight: 900;
+    font-size: 24px;
+    background: linear-gradient(45deg, #9d4edd, #ff00ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 5px rgba(157, 78, 221, 0.5);
+}
+
+/* Огненная семерка */
+.symbol-seven {
+    color: #ff4500;
+    font-weight: bold;
+    text-shadow: 0 0 10px #ff8c00;
+}
+
+      
 </style>
 
 </head>      
@@ -119,20 +163,20 @@
 
  <!-- 2. ОКНО ИГРЫ СЛОТЫ -->
 <div id="slots-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999; flex-direction:column; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
-    <div style="background:linear-gradient(180deg, #2d1b4d 0%, #151515 100%); padding:30px; border-radius:30px; border:2px solid var(--accent); text-align:center; width:85%;">
-        <h2 style="color:white; margin-bottom:20px; letter-spacing:2px;">GIG SLOTS</h2>
+    <div style="background: linear-gradient(180deg, #440066 0%, #111 100%); padding:25px; border-radius:40px; border:3px solid #9d4edd; text-align:center; width:85%; box-shadow: 0 0 50px rgba(157, 78, 221, 0.4);">
+        <h2 style="color:#fff; margin-bottom:20px; font-style:italic;">🎰 GIG CASINO 🎰</h2>
         
-        <!-- Барабаны -->
-        <div style="display:flex; justify-content:center; gap:10px; background:#000; padding:20px; border-radius:20px; border:1px solid #333; margin-bottom:20px; font-size:50px;">
-            <div id="reel1">🍓</div>
-            <div id="reel2">💎</div>
-            <div id="reel3">🍒</div>
+        <div class="slot-machine">
+            <div class="reel" id="reel1">7</div>
+            <div class="reel" id="reel2">7</div>
+            <div class="reel" id="reel3">7</div>
         </div>
 
-        <h3 id="slots-status" style="color:white; min-height:1.5em;">Удачи!</h3>
-        <button id="slots-close" onclick="closeSlots()" style="display:none; background:var(--accent); border:none; color:white; padding:12px 30px; border-radius:12px; margin-top:15px; font-weight:bold;">ОК</button>
+        <h3 id="slots-status" style="color:white; margin: 20px 0; height: 1.2em;">Сделайте ставку!</h3>
+        <button id="slots-close" onclick="closeSlots()" style="display:none; background:#9d4edd; border:none; color:white; padding:12px 40px; border-radius:15px; font-weight:bold; cursor:pointer;">ВЫХОД</button>
     </div>
 </div>
+
 
 
     
@@ -393,75 +437,123 @@ function initTon() {
 }
 
 
-const symbols = ["🍓", "🍒", "💎", "🍋", "🍇", "GIG", "777"];
-// Веса (чем чаще символ, тем больше его в массиве для рандома)
-const reelPool = ["🍓","🍓","🍒","🍒","💎","💎","🍋","🍋","🍇","🍇","GIG","777"];
+// Конфигурация символов
+const slotSymbols = [
+    { id: 'berry', html: '🍓' },
+    { id: 'cherry', html: '🍒' },
+    { id: 'gig', html: '<span class="symbol-gig">GIG</span>' },
+    { id: 'seven', html: '<span class="symbol-seven">7</span>' }
+];
+
+// Математика редкости (Pool)
+// Чем больше одинаковых ID в массиве, тем чаще они выпадают
+const slotPool = [
+    'berry','berry','berry','berry', 
+    'cherry','cherry','cherry', 
+    'gig','gig', 
+    'seven' // Всего одна семерка — шанс ~10% на барабан
+];
 
 function startSlots(bet) {
+    const balLabel = document.getElementById('top-bal');
+    let currentBal = parseInt(balLabel.innerText.replace(/\s/g, ''));
+    
+    if (currentBal < bet) {
+        tg.showAlert("Недостаточно 💎!");
+        return;
+    }
+
+    // Списание баланса
+    currentBal -= bet;
+    updateUIBalance(currentBal);
+
     const visual = [document.getElementById('reel1'), document.getElementById('reel2'), document.getElementById('reel3')];
     const status = document.getElementById('slots-status');
     const closeBtn = document.getElementById('slots-close');
-    const sndSpin = document.getElementById('snd-spin');
-    const sndWin = document.getElementById('snd-win');
-
+    
     document.getElementById('slots-overlay').style.display = 'flex';
     closeBtn.style.display = 'none';
-    status.innerText = "Крутим...";
-    
+    status.innerText = "Вращаем барабаны...";
+
+    // Звук спина
+    const sndSpin = document.getElementById('snd-spin');
     if(sndSpin) sndSpin.play();
 
+    // Анимация кручения
     let spins = 0;
     let interval = setInterval(() => {
         visual.forEach(r => {
-            r.innerText = symbols[Math.floor(Math.random() * symbols.length)];
-            r.style.transform = `translateY(${Math.random() * 5}px)`;
+            const randomSym = slotSymbols[Math.floor(Math.random() * slotSymbols.length)];
+            r.innerHTML = randomSym.html;
+            r.style.transform = `translateY(${Math.random() * 4 - 2}px)`;
         });
         spins++;
         if (spins > 20) {
             clearInterval(interval);
-            finishSlots(bet, visual, status, closeBtn, sndWin);
+            finishSlots(bet, visual, status, closeBtn);
         }
-    }, 100);
+    }, 80);
 }
 
-function finishSlots(bet, visual, status, closeBtn, sndWin) {
-    // Генерируем финальный результат с учетом редкости
-    const res = [
-        reelPool[Math.floor(Math.random() * reelPool.length)],
-        reelPool[Math.floor(Math.random() * reelPool.length)],
-        reelPool[Math.floor(Math.random() * reelPool.length)]
+function finishSlots(bet, visual, status, closeBtn) {
+    // Определяем результат по весам
+    const results = [
+        slotPool[Math.floor(Math.random() * slotPool.length)],
+        slotPool[Math.floor(Math.random() * slotPool.length)],
+        slotPool[Math.floor(Math.random() * slotPool.length)]
     ];
 
+    // Отрисовка финальных символов
     visual.forEach((r, i) => {
-        r.innerText = res[i];
+        const sym = slotSymbols.find(s => s.id === results[i]);
+        r.innerHTML = sym.html;
         r.style.transform = "translateY(0)";
     });
 
     let multiplier = 0;
-    const combo = res.join('');
-
-    if (res[0] === res[1] && res[1] === res[2]) {
-        if (res[0] === "777") multiplier = 5;
-        else if (res[0] === "GIG") multiplier = 3;
-        else if (res[0] === "🍓") multiplier = 2;
-        else multiplier = 1.5; // За любые другие 3 одинаковых
+    // Проверка комбинации (3 в ряд)
+    if (results[0] === results[1] && results[1] === results[2]) {
+        const winner = results[0];
+        if (winner === 'seven') multiplier = 5;
+        else if (winner === 'gig') multiplier = 3;
+        else multiplier = 2; // Клубника или Вишня
     }
 
     let change = -bet;
     if (multiplier > 0) {
-        const win = bet * multiplier;
-        change = win - bet;
-        status.innerHTML = `<span style="color:#4cd137">ВЫИГРЫШ: ${win} 💎</span>`;
+        const winAmount = bet * multiplier;
+        change = winAmount - bet;
+        status.innerHTML = `<span style="color:#4cd137">🔥 ВЫИГРЫШ: ${winAmount} 💎</span>`;
+        
+        const sndWin = document.getElementById('snd-win');
         if(sndWin) sndWin.play();
         tg.HapticFeedback.notificationOccurred('success');
+        
+        updateUIBalance(getRawBalance() + winAmount);
     } else {
-        status.innerHTML = `<span style="color:#ff4757">Попробуй еще раз!</span>`;
+        status.innerHTML = `<span style="color:#ff4757">Попробуй снова!</span>`;
+        tg.HapticFeedback.notificationOccurred('error');
     }
 
-    closeBtn.style.display = 'block';
-    updateVisualBalance(change);
-    
-    tg.sendData(JSON.stringify({ action: "game_result", amount: change }));
+    closeBtn.style.display = 'inline-block';
+
+    // Отправка в базу
+    tg.sendData(JSON.stringify({
+        action: "game_result",
+        amount: change
+    }));
+}
+
+// Вспомогательные функции
+function updateUIBalance(newVal) {
+    const b1 = document.getElementById('top-bal');
+    const b2 = document.getElementById('arena-bal');
+    if(b1) b1.innerText = newVal.toLocaleString();
+    if(b2) b2.innerText = newVal.toLocaleString();
+}
+
+function getRawBalance() {
+    return parseInt(document.getElementById('top-bal').innerText.replace(/\s/g, ''));
 }
 
 function closeSlots() {
