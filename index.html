@@ -100,6 +100,8 @@
     }
     nav div { color: var(--gray); font-size: 10px; text-align: center; cursor: pointer; }
 
+
+      /* 8. СЛОТЫ */
 .slot-machine {
     background: #222;
     border: 5px solid #444;
@@ -143,6 +145,9 @@
 }
 
       
+
+      
+      
 </style>
 
 </head>      
@@ -177,6 +182,24 @@
     </div>
 </div>
 
+<div id="target-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999; flex-direction:column; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
+    <div style="background:radial-gradient(circle, #333 0%, #111 100%); padding:30px; border-radius:40px; border:2px solid #ff4757; text-align:center; width:85%; position:relative;">
+        <h2 style="color:white; margin-bottom:20px; font-family:sans-serif;">🎯 МИШЕНЬ</h2>
+        
+        <!-- Мишень -->
+        <div id="dartboard" style="width:220px; height:220px; margin:0 auto; border-radius:50%; border:10px solid #576574; position:relative; background:#2f3542; overflow:hidden;">
+            <div style="position:absolute; inset:20px; border-radius:50%; border:15px solid #eb4d4b;"></div> <!-- 2x зона -->
+            <div style="position:absolute; inset:60px; border-radius:50%; border:15px solid #f9ca24;"></div> <!-- 3x зона -->
+            <div style="position:absolute; inset:100px; border-radius:50%; background:#ffffff; border:2px solid #000;"></div> <!-- 5x центр -->
+            
+            <!-- Дротик (появляется при броске) -->
+            <div id="dart" style="position:absolute; width:15px; height:15px; background:#fff; border-radius:50%; display:none; z-index:10; border:2px solid #000; box-shadow:0 0 10px #fff;"></div>
+        </div>
+
+        <h3 id="target-status" style="color:white; margin:25px 0; font-family:sans-serif; min-height:1.2em;">Готовы к броску?</h3>
+        <button id="target-close" onclick="closeTarget()" style="display:none; background:#ff4757; border:none; color:white; padding:12px 40px; border-radius:15px; font-weight:bold; cursor:pointer;">ВЫХОД</button>
+    </div>
+</div>
 
 
     
@@ -290,16 +313,31 @@
             div.style = "background:var(--card); border-radius:20px; padding:20px; border:1px solid #222; text-align:center; position:relative; cursor:pointer;";
             
            div.onclick = () => {
-    if (g.n.includes("Кубик") || g.n.includes("Кости")) {
-        openBetPopup(); // Твой старый prompt
-    } else if (g.n.includes("Слот Классик")) {
-        // Спрашиваем ставку и запускаем слоты
-        const val = prompt("Ставка на Слоты:", "100");
-        if (val) startSlots(parseInt(val));
-    } else {
-        tg.showAlert("В разработке...");
+    tg.HapticFeedback.impactOccurred('medium');
+    const name = g.n.toLowerCase();
+
+    if (name.includes("кубик") || name.includes("кост")) {
+        openBetPopup();
+    } 
+    else if (name.includes("слот")) {
+        const val = prompt("Ставка на Слоты 🎰:", "100");
+        if (val) {
+            const amount = parseInt(val.replace(/\D/g, ''));
+            if (amount > 0) startSlots(amount);
+        }
+    } 
+    else if (name.includes("цель")) {
+        const val = prompt("Ставка на Меткость 🎯:", "100");
+        if (val) {
+            const amount = parseInt(val.replace(/\D/g, ''));
+            if (amount > 0) startTargetGame(amount);
+        }
+    } 
+    else {
+        tg.showAlert(`Игра "${g.n}" в разработке 🛠`);
     }
 };
+
 
 
 
@@ -566,6 +604,81 @@ function updateVisualBalance(change) {
     bal.innerText = (current + change).toLocaleString();
 }
 
+function startTargetGame(bet) {
+    const balLabel = document.getElementById('top-bal');
+    let currentBal = getRawBalance();
+    
+    if (currentBal < bet) {
+        tg.showAlert("Недостаточно 💎!");
+        return;
+    }
+
+    updateUIBalance(currentBal - bet);
+
+    const overlay = document.getElementById('target-overlay');
+    const dart = document.getElementById('dart');
+    const status = document.getElementById('target-status');
+    const closeBtn = document.getElementById('target-close');
+
+    overlay.style.display = 'flex';
+    closeBtn.style.display = 'none';
+    dart.style.display = 'none';
+    status.innerText = "Целимся...";
+
+    // Анимация броска через 1 секунду
+    setTimeout(() => {
+        status.innerText = "БРОСОК! 🚀";
+        
+        // Рандомим результат (0 - промах, 1 - 2x, 2 - 3x, 3 - 5x)
+        // Массив шансов: чем больше нулей, тем чаще промах
+        const chances = [0, 0, 0, 0, 0, 1, 1, 2, 3]; 
+        const result = chances[Math.floor(Math.random() * chances.length)];
+
+        // Показываем дротик в зависимости от результата
+        dart.style.display = 'block';
+        
+        if (result === 0) {
+            // Анимация отскока (дротик падает вниз)
+            dart.style.left = "50%"; dart.style.top = "10%";
+            setTimeout(() => { 
+                dart.style.transition = "all 0.5s ease-in";
+                dart.style.top = "110%"; 
+                status.innerHTML = "<span style='color:#ff4757'>ОТСКОЧИЛ! ❌</span>";
+                tg.HapticFeedback.notificationOccurred('error');
+                finishTarget(bet, 0);
+            }, 300);
+        } else {
+            // Попадание
+            dart.style.transition = "none";
+            if (result === 1) { dart.style.left = "70%"; dart.style.top = "30%"; } // 2x
+            if (result === 2) { dart.style.left = "40%"; dart.style.top = "70%"; } // 3x
+            if (result === 3) { dart.style.left = "48%"; dart.style.top = "48%"; } // 5x (Центр)
+            
+            let mult = (result === 1) ? 2 : (result === 2 ? 3 : 5);
+            status.innerHTML = `<span style='color:#4cd137'>ПОПАЛ! x${mult} 🔥</span>`;
+            tg.HapticFeedback.notificationOccurred('success');
+            finishTarget(bet, mult);
+        }
+    }, 1200);
+}
+
+function finishTarget(bet, mult) {
+    let win = bet * mult;
+    let change = win - bet;
+    
+    if (win > 0) updateUIBalance(getRawBalance() + win);
+    
+    document.getElementById('target-close').style.display = 'inline-block';
+    tg.sendData(JSON.stringify({ action: "game_result", amount: change }));
+}
+
+function closeTarget() {
+    document.getElementById('target-overlay').style.display = 'none';
+    document.getElementById('dart').style.transition = "none";
+}
+
+
+       
        
 // 7. ГЛАВНЫЙ ЗАПУСК ПРИЛОЖЕНИЯ
        window.onload = function() {
