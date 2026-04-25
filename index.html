@@ -265,25 +265,36 @@
 
 // 4. ОКНО ВЫБОРА СТАВКИ
 function openBetPopup() {
-    console.log("Метод openBetPopup запущен");
     try {
-        window.Telegram.WebApp.showPopup({
-            title: "Ставка",
-            message: "Выбери сумму:",
+        // Проверка: а видит ли скрипт библиотеку вообще?
+        if (typeof window.Telegram === 'undefined' || !window.Telegram.WebApp) {
+            alert("Библиотека Telegram не загружена!");
+            return;
+        }
+
+        const webapp = window.Telegram.WebApp;
+
+        webapp.showPopup({
+            title: '🎲 Ставка',
+            message: 'Выберите сумму ставки:',
             buttons: [
-                {id: "100", type: "default", text: "100"},
-                {id: "500", type: "default", text: "500"},
-                {type: "cancel", text: "Отмена"}
+                { id: '100', type: 'default', text: '100 💎' },
+                { id: '500', type: 'default', text: '500 💎' },
+                { type: 'cancel', text: 'Отмена' }
             ]
-        }, function(buttonId) {
-            if (buttonId && buttonId !== "cancel") {
-                startDiceGame(parseInt(buttonId));
+        }, function(id) {
+            if (id && id !== 'cancel') {
+                // Прямой запуск без лишних проверок
+                startDiceGame(parseInt(id));
             }
         });
-    } catch (e) {
-        alert("ОШИБКА ТУТ: " + e.name + " - " + e.message);
+
+    } catch (err) {
+        // Это покажет НАСТОЯЩУЮ причину ошибки
+        alert("ОШИБКА: " + err.name + "\nСУТЬ: " + err.message);
     }
 }
+
 
 
 
