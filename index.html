@@ -265,38 +265,28 @@
 
 // 4. ОКНО ВЫБОРА СТАВКИ
 function openBetPopup() {
-    // Используем прямой путь к WebApp, чтобы ничего не терялось
-    const webapp = window.Telegram.WebApp;
+    try {
+        const webapp = window.Telegram.WebApp;
 
-    webapp.showPopup({
-        title: '💎 Ставка на Кости',
-        message: 'Выберите сумму или введите свою:',
-        buttons: [
-            { id: '100', type: 'default', text: '100 💎' },
-            { id: '500', type: 'default', text: '500 💎' },
-            { id: 'custom', type: 'default', text: '✍️ Своя сумма' },
-            { type: 'cancel', text: 'Отмена' }
-        ]
-    }, (buttonId) => {
-        if (!buttonId || buttonId === 'cancel') return;
-
-        // ВАЖНО: Делаем паузу перед вводом, чтобы старое окно успело закрыться
-        if (buttonId === 'custom') {
-            setTimeout(() => {
-                const userVal = prompt("Введите сумму ставки:", "100");
-                if (userVal) {
-                    const amount = parseInt(userVal.replace(/\D/g, ''));
-                    if (amount > 0) {
-                        startDiceGame(amount);
-                    } else {
-                        webapp.showAlert("❌ Введите число больше 0");
-                    }
-                }
-            }, 200); // Эти 200мс решают проблему "сбоя окна"
-        } else {
-            startDiceGame(parseInt(buttonId));
-        }
-    });
+        webapp.showPopup({
+            title: '💎 Выберите ставку',
+            message: 'Нажмите на нужную сумму:',
+            buttons: [
+                { id: '100', type: 'default', text: '100 💎' },
+                { id: '500', type: 'default', text: '500 💎' },
+                { id: '1000', type: 'default', text: '1000 💎' }, // Добавили
+                { id: '5000', type: 'default', text: '5000 💎' }, // Добавили
+                { type: 'cancel', text: 'Отмена' }
+            ]
+        }, (id) => {
+            if (id && id !== 'cancel') {
+                startDiceGame(parseInt(id));
+            }
+        });
+    } catch (e) {
+        // Если даже это упадет - значит проблема в самом вызове метода
+        alert("Ошибка окна: " + e.message);
+    }
 }
 
 
