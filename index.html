@@ -265,35 +265,26 @@
 
 // 4. ОКНО ВЫБОРА СТАВКИ
 function openBetPopup() {
+    console.log("Метод openBetPopup запущен");
     try {
-        // Проверяем, существует ли метод в Telegram
-        if (!tg || !tg.showPopup) {
-            alert("Метод showPopup не найден. Вы запустили бота не из Telegram?");
-            return;
-        }
-
-        tg.showPopup({
-            title: '🎲 Ставка на Кости',
-            message: 'Выберите сумму ставки в 💎:',
+        window.Telegram.WebApp.showPopup({
+            title: "Ставка",
+            message: "Выбери сумму:",
             buttons: [
-                { id: '100', type: 'default', text: '100 💎' },
-                { id: '500', type: 'default', text: '500 💎' },
-                { id: '1000', type: 'default', text: '1000 💎' },
-                { type: 'cancel', text: 'Отмена' }
+                {id: "100", type: "default", text: "100"},
+                {id: "500", type: "default", text: "500"},
+                {type: "cancel", text: "Отмена"}
             ]
-        }, (id) => {
-            // Если пользователь нажал кнопку (id не пустой и не отмена)
-            if (id && id !== 'cancel') {
-                console.log("Ставка принята:", id);
-                // Запускаем игру, переводя ID в число
-                startDiceGame(parseInt(id));
+        }, function(buttonId) {
+            if (buttonId && buttonId !== "cancel") {
+                startDiceGame(parseInt(buttonId));
             }
         });
-    } catch (err) {
-        // Выводим конкретный текст ошибки, чтобы понять, в чем именно затык
-        alert("Критический сбой в openBetPopup: " + err.message);
+    } catch (e) {
+        alert("ОШИБКА ТУТ: " + e.name + " - " + e.message);
     }
 }
+
 
 
 
