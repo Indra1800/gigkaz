@@ -21,20 +21,7 @@
         --error: #ff4757;
         --text: #ffffff;
     }
-
-<div id="bet-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:10001; align-items:center; justify-content:center; backdrop-filter:blur(5px);">
-    <div style="background:var(--card); width:80%; padding:25px; border-radius:30px; border:1px solid var(--accent); text-align:center;">
-        <h3 style="margin:0 0 20px;">💎 Ставка</h3>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
-            <button class="btn-main" style="margin:0; padding:10px;" onclick="selectBet(100)">100</button>
-            <button class="btn-main" style="margin:0; padding:10px;" onclick="selectBet(500)">500</button>
-        </div>
-        <input type="number" id="custom-bet-input" placeholder="Своя сумма" style="width:100%; padding:12px; border-radius:12px; border:1px solid #333; background:#000; color:#fff; text-align:center; margin-bottom:15px; box-sizing:border-box;">
-        <button class="btn-main" style="width:100%; margin:0 0 10px;" onclick="selectBet('custom')">ИГРАТЬ 🚀</button>
-        <div onclick="closeBetModal()" style="color:var(--gray); cursor:pointer; font-size:14px; margin-top:10px;">Отмена</div>
-    </div>
-</div>
-      
+    
     body { 
         background: var(--bg); 
         color: var(--text); 
@@ -112,9 +99,6 @@
         border-top: 1px solid #1a1a1a; z-index: 1000; 
     }
     nav div { color: var(--gray); font-size: 10px; text-align: center; cursor: pointer; }
-
-      
-
 </style>
 
 </head>      
@@ -280,41 +264,39 @@
 
 
 // 4. ОКНО ВЫБОРА СТАВКИ
-// 1. Открыть наше новое окно
 function openBetPopup() {
-    const modal = document.getElementById('bet-modal');
-    if (modal) {
-        modal.style.display = 'flex';
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-            tg.HapticFeedback.impactOccurred('medium');
+    // Используем прямой путь к WebApp, чтобы ничего не терялось
+    const webapp = window.Telegram.WebApp;
+
+    webapp.showPopup({
+        title: '💎 Ставка на Кости',
+        message: 'Выберите сумму или введите свою:',
+        buttons: [
+            { id: '100', type: 'default', text: '100 💎' },
+            { id: '500', type: 'default', text: '500 💎' },
+            { id: 'custom', type: 'default', text: '✍️ Своя сумма' },
+            { type: 'cancel', text: 'Отмена' }
+        ]
+    }, (buttonId) => {
+        if (!buttonId || buttonId === 'cancel') return;
+
+        // ВАЖНО: Делаем паузу перед вводом, чтобы старое окно успело закрыться
+        if (buttonId === 'custom') {
+            setTimeout(() => {
+                const userVal = prompt("Введите сумму ставки:", "100");
+                if (userVal) {
+                    const amount = parseInt(userVal.replace(/\D/g, ''));
+                    if (amount > 0) {
+                        startDiceGame(amount);
+                    } else {
+                        webapp.showAlert("❌ Введите число больше 0");
+                    }
+                }
+            }, 200); // Эти 200мс решают проблему "сбоя окна"
+        } else {
+            startDiceGame(parseInt(buttonId));
         }
-    } else {
-        alert("Ошибка: HTML блок bet-modal не найден!");
-    }
-}
-
-// 2. Закрыть окно
-function closeBetModal() {
-    document.getElementById('bet-modal').style.display = 'none';
-}
-
-// 3. Логика выбора ставки
-function selectBet(amount) {
-    let finalBet = 0;
-
-    if (amount === 'custom') {
-        const input = document.getElementById('custom-bet-input');
-        finalBet = parseInt(input.value);
-        if (!finalBet || finalBet <= 0) {
-            tg.showAlert("Введите корректную сумму!");
-            return;
-        }
-    } else {
-        finalBet = amount;
-    }
-
-    closeBetModal();
-    startDiceGame(finalBet);
+    });
 }
 
 
@@ -436,4 +418,3 @@ function initTon() {
 
 </body>
 </html>
-
