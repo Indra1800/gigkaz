@@ -144,8 +144,33 @@
     text-shadow: 0 0 10px #ff8c00;
 }
 
-      
-
+  /*СУНДУКИ*/    
+.chest-wrapper { cursor: pointer; transition: transform 0.3s; }
+    .chest-wrapper:hover { transform: scale(1.1); }
+    .chest { 
+        font-size: 80px; 
+        filter: drop-shadow(0 0 10px rgba(255,215,0,0.3));
+        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    /* Анимация дрожания перед открытием */
+    .shaking { animation: shake 0.5s infinite; }
+    @keyframes shake {
+        0% { transform: rotate(0deg); }
+        25% { transform: rotate(5deg); }
+        50% { transform: rotate(0deg); }
+        75% { transform: rotate(-5deg); }
+        100% { transform: rotate(0deg); }
+    }
+    /* Анимация взрыва (дым) */
+    .smoke-effect {
+        animation: smoke 1s forwards;
+        filter: grayscale(1) blur(5px);
+        opacity: 0;
+    }
+    @keyframes smoke {
+        0% { transform: scale(1); opacity: 1; filter: blur(0); }
+        100% { transform: scale(3); opacity: 0; filter: blur(20px); }
+    }
       
       
 </style>
@@ -303,6 +328,31 @@
     </div>
 </div>
 
+<!-- ИГРА: КЕЙСЫ (СУНДУКИ) -->
+<div id="boxes-overlay" style="display:none; position:fixed; inset:0; background:radial-gradient(circle, #2d1b4d 0%, #000 100%); z-index:9999; flex-direction:column; align-items:center; justify-content:center; backdrop-filter:blur(15px);">
+    <div style="text-align:center; width:100%;">
+        <h2 style="color:var(--accent); text-shadow:0 0 15px var(--accent); margin-bottom:40px; font-family:serif; font-style:italic;">ТАИНСТВЕННЫЕ СУНДУКИ</h2>
+        
+        <div id="boxes-container" style="display:flex; gap:20px; justify-content:center; perspective: 1000px;">
+            <!-- Три сундука -->
+            <div class="chest-wrapper" onclick="openChest(0)">
+                <div id="chest-0" class="chest">🎁</div>
+            </div>
+            <div class="chest-wrapper" onclick="openChest(1)">
+                <div id="chest-1" class="chest">🎁</div>
+            </div>
+            <div class="chest-wrapper" onclick="openChest(2)">
+                <div id="chest-2" class="chest">🎁</div>
+            </div>
+        </div>
+
+        <h3 id="boxes-status" style="color:white; margin-top:50px; min-height:1.5em; font-family:sans-serif;">Выберите один сундук...</h3>
+        
+        <button id="boxes-close" onclick="closeBoxes()" style="display:none; background:linear-gradient(45deg, #9d4edd, #5a189a); border:none; color:white; padding:15px 50px; border-radius:20px; font-weight:bold; cursor:pointer; box-shadow:0 0 20px rgba(157,78,221,0.5);">ВЕРНУТЬСЯ</button>
+    </div>
+</div>
+
+    
    <script>
         const tg = window.Telegram.WebApp;
         let tonConnectUI;
@@ -407,7 +457,13 @@
         if (amount > 0) startMines(amount);
     }
 }            
-
+      else if (name.includes("кейс") || name.includes("коробк")) {
+    const val = prompt("Ставка на Сундуки 🎁:", "100");
+    if (val) {
+        const amount = parseInt(val.replace(/\D/g, ''));
+        if (amount > 0) startBoxes(amount);
+    }
+}
     else {
         tg.showAlert(`Игра "${g.n}" в разработке 🛠`);
     }
@@ -1069,6 +1125,82 @@ function minesCashout() {
 
 function closeMines() {
     document.getElementById('mines-overlay').style.display = 'none';
+}
+
+
+let boxesBet = 0;
+let canOpen = false;
+
+function startBoxes(bet) {
+    if (getRawBalance() < bet) return tg.showAlert("Недостаточно 💎!");
+    
+    boxesBet = bet;
+    canOpen = true;
+    updateUIBalance(getRawBalance() - bet);
+
+    document.getElementById('boxes-overlay').style.display = 'flex';
+    document.getElementById('boxes-status').innerText = "В каком-то из них золото...";
+    document.getElementById('boxes-close').style.display = 'none';
+    
+    // Сбрасываем сундуки
+    for(let i=0; i<3; i++) {
+        let c = document.getElementById(`chest-${i}`);
+        c.innerText = "🎁";
+        c.style.opacity = "1";
+        c.style.transform = "scale(1)";
+        c.classList.remove('smoke-effect');
+    }
+}
+
+
+       /*СУНДУКИ*/
+function openChest(id) {
+    if (!canOpen) return;
+    canOpen = false;
+
+    const chest = document.getElementById(`chest-${id}`);
+    const status = document.getElementById('boxes-status');
+    
+    // 1. Анимация ожидания (дрожание)
+    chest.classList.add('shaking');
+    tg.HapticFeedback.impactOccurred('medium');
+
+    setTimeout(() => {
+        chest.classList.remove('shaking');
+        
+        // 2. Логика шанса: чем выше ставка, тем сложнее выиграть
+        // Если ставка > 500, шанс победы 30%, иначе 45%
+        let winChance = boxesBet > 500 ? 30 : 45;
+        let isWin = (Math.random() * 100) < winChance;
+
+        if (isWin) {
+            // ПОБЕДА
+            chest.innerText = "💰"; // Сундук с золотом
+            chest.style.filter = "drop-shadow(0 0 30px #f1c40f)";
+            let winAmount = boxesBet * 3;
+            status.innerHTML = `<span style="color:#f1c40f; font-size:24px;">ПОБЕДА! +${winAmount} 💎</span>`;
+            updateUIBalance(getRawBalance() + winAmount);
+            tg.HapticFeedback.notificationOccurred('success');
+            tg.sendData(JSON.stringify({ action: "game_result", amount: winAmount - boxesBet }));
+        } else {
+            // ПОРАЖЕНИЕ (Взрыв)
+            chest.innerText = "💥";
+            tg.HapticFeedback.notificationOccurred('error');
+            
+            setTimeout(() => {
+                chest.classList.add('smoke-effect');
+                status.innerHTML = `<span style="color:#ff4757; font-size:24px; text-transform:uppercase; letter-spacing:3px;">ПОРАЖЕНИЕ</span>`;
+            }, 300);
+            
+            tg.sendData(JSON.stringify({ action: "game_result", amount: -boxesBet }));
+        }
+
+        document.getElementById('boxes-close').style.display = 'inline-block';
+    }, 1200);
+}
+
+function closeBoxes() {
+    document.getElementById('boxes-overlay').style.display = 'none';
 }
 
        
