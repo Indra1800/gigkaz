@@ -171,7 +171,97 @@
         0% { transform: scale(1); opacity: 1; filter: blur(0); }
         100% { transform: scale(3); opacity: 0; filter: blur(20px); }
     }
-      
+   /*ПУЛЬС СТИЛЬ*/   
+#pulse-overlay {
+    position: fixed;
+    inset: 0;
+    background: #0b0e11; /* Цвет фона как на Binance */
+    z-index: 9999;
+    display: none;
+    flex-direction: column;
+    padding: 15px;
+    font-family: 'Roboto', sans-serif;
+}
+
+/* Кнопки выбора времени (10s, 30s, 1m) */
+.timeframe-selector {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.tf-btn {
+    background: #1e2329;
+    border: 1px solid #2b3139;
+    color: #848e9c;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.tf-btn.active {
+    border-color: #f0b90b;
+    color: #f0b90b;
+    background: rgba(240, 185, 11, 0.1);
+}
+
+/* Контейнер графика */
+.chart-container {
+    flex-grow: 1;
+    position: relative;
+    background: #161a1e;
+    border: 1px solid #2b2f36;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+#pulse-canvas {
+    width: 100%;
+    height: 100%;
+}
+
+/* Плашка текущей цены на графике */
+#price-tag {
+    position: absolute;
+    right: 0;
+    background: #9d4edd;
+    color: white;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: bold;
+    border-radius: 4px 0 0 4px;
+    transition: top 0.1s linear, background 0.3s;
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* Кнопки торговли */
+.pulse-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 20px;
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.trade-btn {
+    padding: 18px;
+    border-radius: 12px;
+    border: none;
+    color: white;
+    font-size: 18px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.btn-up { background: #2ebd85; } /* Вверх (Long) */
+.btn-down { background: #f6465d; } /* Вниз (Short) */
+
+.btn-up:active, .btn-down:active { transform: scale(0.95); opacity: 0.8; }
       
 </style>
 
@@ -352,36 +442,54 @@
     </div>
 </div>
 
-    <!-- ИГРА: ПУЛЬС (STABLE / X100) -->
-<div id="pulse-overlay" style="display:none; position:fixed; inset:0; background:#0b0e11; z-index:9999; flex-direction:column; padding:20px; font-family:sans-serif;">
-    <!-- Шапка терминала -->
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    
+    <div id="pulse-overlay" style="display:none; position:fixed; inset:0; background:#0b0e11; z-index:9999; flex-direction:column; padding:15px; font-family:sans-serif;">
+    
+    <!-- 1. ВЕРХНЯЯ ПАНЕЛЬ (ЗАГОЛОВОК И БАЛАНС) -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
         <div>
-            <h2 id="pulse-title" style="color:white; margin:0; font-size:18px;">PULSE STABLE</h2>
-            <small id="pulse-timer" style="color:var(--gray);">Таймфрейм: 30s</small>
+            <h2 id="pulse-title" style="color:white; margin:0; font-size:18px; font-weight:900; letter-spacing:1px;">PULSE STABLE</h2>
+            <div style="display:flex; align-items:center; gap:5px; margin-top:4px;">
+                <span style="width:8px; height:8px; background:#2ebd85; border-radius:50%; animation: pulse-blink 1s infinite;"></span>
+                <small style="color:#848e9c; text-transform:uppercase; font-size:10px; font-weight:bold;">Live Market</small>
+            </div>
         </div>
         <div style="text-align:right;">
-            <div style="color:var(--accent); font-weight:bold;">💎 <span id="pulse-bal">0</span></div>
-            <small id="pulse-bet-display" style="color:var(--gray);">Ставка: 0</small>
+            <div style="color:var(--accent); font-weight:bold; font-size:16px;">💎 <span id="pulse-bal">0</span></div>
+            <small id="pulse-bet-display" style="color:#848e9c; font-size:11px;">Ставка: 0</small>
         </div>
     </div>
 
-    <!-- График -->
-    <div style="flex-grow:1; position:relative; background:#161a1e; border-radius:15px; border:1px solid #2b2f36; overflow:hidden;">
-        <canvas id="pulse-canvas"></canvas>
-        <!-- Текущая цена -->
-        <div id="price-tag" style="position:absolute; right:10px; top:50%; background:var(--accent); color:white; padding:2px 8px; border-radius:4px; font-size:12px; transition: top 0.1s;">1.2345</div>
+    <!-- 2. СЕЛЕКТОР ТАЙМФРЕЙМОВ -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; background:#161a1e; padding:8px; border-radius:10px;">
+        <div style="display:flex; gap:8px;">
+            <button onclick="setTimeframe(10, this)" class="tf-btn">10s</button>
+            <button onclick="setTimeframe(30, this)" class="tf-btn active">30s</button>
+            <button onclick="setTimeframe(60, this)" class="tf-btn">1m</button>
+        </div>
+        <div id="pulse-timer" style="color:#848e9c; font-weight:bold; font-size:12px; letter-spacing:1px;">READY</div>
     </div>
 
-    <!-- Кнопки управления -->
-    <div id="pulse-controls" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:20px;">
-        <button onclick="tradePulse('up')" style="background:#2ebd85; border:none; color:white; padding:20px; border-radius:12px; font-weight:bold; font-size:18px; cursor:pointer;">LONG ↑</button>
-        <button onclick="tradePulse('down')" style="background:#f6465d; border:none; color:white; padding:20px; border-radius:12px; font-weight:bold; font-size:18px; cursor:pointer;">SHORT ↓</button>
+    <!-- 3. ГРАФИК (TERMINAL) -->
+    <div style="flex-grow:1; position:relative; background:#161a1e; border-radius:15px; border:1px solid #2b2f36; overflow:hidden; box-shadow: inset 0 0 30px rgba(0,0,0,0.5);">
+        <!-- Холст для рисования -->
+        <canvas id="pulse-canvas" style="width:100%; height:100%; display:block;"></canvas>
+        
+        <!-- Плашка цены -->
+        <div id="price-tag" style="position:absolute; right:0; background:var(--accent); color:white; padding:5px 12px; border-radius:6px 0 0 6px; font-size:13px; font-weight:bold; font-variant-numeric: tabular-nums; box-shadow: -2px 0 10px rgba(0,0,0,0.5); z-index:100;">
+            0.00
+        </div>
     </div>
 
-    <button id="pulse-close" onclick="closePulse()" style="display:none; width:100%; background:#2b2f36; border:none; color:white; padding:15px; border-radius:12px; margin-top:15px; font-weight:bold;">ВЫХОД</button>
+    <!-- 4. КНОПКИ ТОРГОВЛИ (LONG / SHORT) -->
+    <div id="pulse-controls" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:20px; padding-bottom: 20px;">
+        <button onclick="tradePulse('up')" style="background:#2ebd85; border:none; color:white; padding:20px; border-radius:16px; font-weight:900; font-size:18px; cursor:pointer; box-shadow: 0 4px 0 #1e8a60; active {transform:translateY(2px); box-shadow:none;}">LONG ↑</button>
+        <button onclick="tradePulse('down')" style="background:#f6465d; border:none; color:white; padding:20px; border-radius:16px; font-weight:900; font-size:18px; cursor:pointer; box-shadow: 0 4px 0 #b22d3d; active {transform:translateY(2px); box-shadow:none;}">SHORT ↓</button>
+    </div>
+
+    <!-- КНОПКА ВЫХОДА (ПОЯВЛЯЕТСЯ ПОСЛЕ СДЕЛКИ) -->
+    <button id="pulse-close" onclick="closePulse()" style="display:none; width:100%; background:#2b3139; border:none; color:white; padding:18px; border-radius:16px; margin-top:10px; font-weight:bold; font-size:16px; cursor:pointer;">ЗАКРЫТЬ ТЕРМИНАЛ</button>
 </div>
-
     
    <script>
         const tg = window.Telegram.WebApp;
@@ -1225,60 +1333,68 @@ function closeBoxes() {
 }
 
 /*ПУЛЬС*/
- let pulseCtx, pulseCanvas, pulseAnimId;
+let pulseCtx, pulseCanvas, pulseAnimId;
 let priceHistory = [];
 let currentPrice = 50;
 let isTrading = false;
 let pulseMode = 'stable'; 
-let tradePrice = 0;
-let tradeDirection = ''; 
 let pulseBet = 0;
 let entryPrice = null;
+let timeframe = 30; // Таймфрейм по умолчанию
+let lastTickTime = 0;
+
+function setTimeframe(s) {
+    if(isTrading) return; // Нельзя менять во время сделки
+    timeframe = s;
+    document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    tg.HapticFeedback.impactOccurred('light');
+}
 
 function startPulse(bet, mode) {
     if (getRawBalance() < bet) return tg.showAlert("Недостаточно 💎!");
-    
     pulseBet = bet;
     pulseMode = mode;
     isTrading = false;
     entryPrice = null;
     currentPrice = 50;
-    priceHistory = Array(60).fill(50);
+    // Очищаем и заполняем начальными данными
+    priceHistory = [];
+    for(let i=0; i<100; i++) priceHistory.push(50);
     
     updateUIBalance(getRawBalance() - bet);
     
-    const overlay = document.getElementById('pulse-overlay');
-    overlay.style.display = 'flex';
+    document.getElementById('pulse-overlay').style.display = 'flex';
     document.getElementById('pulse-controls').style.display = 'grid';
     document.getElementById('pulse-close').style.display = 'none';
     document.getElementById('pulse-title').innerText = mode === 'x100' ? "PULSE X100" : "PULSE STABLE";
+    document.getElementById('pulse-timer').innerText = "READY";
     
     initCanvas();
     if (pulseAnimId) cancelAnimationFrame(pulseAnimId);
     animatePulse();
 }
 
-function initCanvas() {
-    pulseCanvas = document.getElementById('pulse-canvas');
-    pulseCtx = pulseCanvas.getContext('2d');
-    pulseCanvas.width = pulseCanvas.clientWidth;
-    pulseCanvas.height = pulseCanvas.clientHeight;
-}
+function animatePulse(timestamp) {
+    if (document.getElementById('pulse-overlay').style.display === 'none') return;
 
-function animatePulse() {
-    if (document.getElementById('pulse-overlay').style.display === 'none') {
-        cancelAnimationFrame(pulseAnimId);
-        return;
-    }
-
-    let vol = pulseMode === 'x100' ? 3.0 : 1.0;
-    currentPrice += (Math.random() - 0.5) * vol;
+    // Регулируем частоту тиков (в X100 тики в 3 раза чаще)
+    let tickSpeed = pulseMode === 'x100' ? 50 : 150; 
     
-    if (currentPrice < 10) currentPrice = 10;
-    if (currentPrice > 90) currentPrice = 90;
+    if (timestamp - lastTickTime > tickSpeed) {
+        // Импульсивность (в X100 размах цен гораздо выше)
+        let volatility = pulseMode === 'x100' ? 8.0 : 2.0;
+        let change = (Math.random() - 0.5) * volatility;
+        
+        currentPrice += change;
+        if (currentPrice < 5) currentPrice = 5;
+        if (currentPrice > 95) currentPrice = 95;
 
-    priceHistory.push(currentPrice);
-    if (priceHistory.length > 80) priceHistory.shift();
+        priceHistory.push(currentPrice);
+        if (priceHistory.length > 150) priceHistory.shift();
+        
+        lastTickTime = timestamp;
+    }
 
     drawChart();
     pulseAnimId = requestAnimationFrame(animatePulse);
@@ -1290,54 +1406,49 @@ function drawChart() {
     const h = pulseCanvas.height;
     ctx.clearRect(0, 0, w, h);
 
+    // Сетка
     ctx.strokeStyle = '#1e2329';
     ctx.lineWidth = 1;
-    for(let i=0; i<h; i+=h/6) {
-        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(w, i); ctx.stroke();
-    }
+    for(let i=0; i<w; i+=w/10) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,h); ctx.stroke(); }
+    for(let i=0; i<h; i+=h/6) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(w,i); ctx.stroke(); }
 
+    // Точка входа (Линия)
     if (isTrading && entryPrice !== null) {
-        const entryY = h - (entryPrice * (h/100));
+        let y = h - (entryPrice * (h/100));
         ctx.strokeStyle = '#f0b90b';
         ctx.setLineDash([5, 5]);
-        ctx.beginPath(); ctx.moveTo(0, entryY); ctx.lineTo(w, entryY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
         ctx.setLineDash([]);
     }
 
-    const gradient = ctx.createLinearGradient(0, 0, 0, h);
-    const mColor = pulseMode === 'x100' ? 'rgba(157, 78, 221, 0.3)' : 'rgba(46, 189, 133, 0.3)';
-    gradient.addColorStop(0, mColor);
-    gradient.addColorStop(1, 'transparent');
-
-    ctx.beginPath();
-    ctx.fillStyle = gradient;
-    for(let i=0; i<priceHistory.length; i++) {
-        let x = (w / (priceHistory.length-1)) * i;
-        let y = h - (priceHistory[i] * (h/100));
-        if(i === 0) ctx.moveTo(x, h);
-        ctx.lineTo(x, y);
-        if(i === priceHistory.length - 1) ctx.lineTo(x, h);
-    }
-    ctx.fill();
-
+    // Рисование ГРАФИКА (Тиковый стиль)
     ctx.beginPath();
     ctx.strokeStyle = pulseMode === 'x100' ? '#9d4edd' : '#2ebd85';
-    ctx.lineWidth = 3;
-    for(let i=0; i<priceHistory.length; i++) {
-        let x = (w / (priceHistory.length-1)) * i;
-        let y = h - (priceHistory[i] * (h/100));
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'miter'; // Острые углы
+
+    // Масштабируем график под выбранный таймфрейм
+    let visiblePoints = timeframe * 2; 
+    let step = w / visiblePoints;
+    let startIdx = Math.max(0, priceHistory.length - visiblePoints);
+
+    for(let i = 0; i < visiblePoints; i++) {
+        let val = priceHistory[startIdx + i];
+        let x = i * step;
+        let y = h - (val * (h/100));
         if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
     ctx.stroke();
 
-    const lastY = h - (currentPrice * (h/100));
-    const priceTag = document.getElementById('price-tag');
-    priceTag.style.top = (lastY - 10) + 'px';
-    priceTag.innerText = (currentPrice + 100).toFixed(2);
+    // Текущая цена (Метка)
+    let lastY = h - (currentPrice * (h/100));
+    let tag = document.getElementById('price-tag');
+    tag.style.top = (lastY - 10) + 'px';
+    tag.innerText = (currentPrice + 100).toFixed(2);
 
     if (isTrading) {
-        const win = (tradeDirection === 'up' && currentPrice > entryPrice) || (tradeDirection === 'down' && currentPrice < entryPrice);
-        priceTag.style.background = win ? '#2ebd85' : '#f6465d';
+        let win = (tradeDirection === 'up' && currentPrice > entryPrice) || (tradeDirection === 'down' && currentPrice < entryPrice);
+        tag.style.background = win ? '#2ebd85' : '#f6465d';
     }
 }
 
@@ -1348,45 +1459,17 @@ function tradePulse(dir) {
     entryPrice = currentPrice;
     
     document.getElementById('pulse-controls').style.display = 'none';
-    tg.HapticFeedback.impactOccurred('medium');
+    tg.HapticFeedback.impactOccurred('heavy');
     
-    let timer = pulseMode === 'x100' ? 10 : 30;
+    let timer = timeframe; // Сделка длится столько, сколько выбран таймфрейм
     let timerInterval = setInterval(() => {
         timer--;
-        document.getElementById('pulse-timer').innerText = `Закрытие: ${timer}s`;
+        document.getElementById('pulse-timer').innerText = timer + "s";
         if (timer <= 0) {
             clearInterval(timerInterval);
             finishPulse();
         }
     }, 1000);
-}
-
-function finishPulse() {
-    let isWin = false;
-    let winMult = pulseMode === 'x100' ? 5 : 2;
-    
-    if (tradeDirection === 'up' && currentPrice > entryPrice) isWin = true;
-    if (tradeDirection === 'down' && currentPrice < entryPrice) isWin = true;
-
-    let change = -pulseBet;
-    if (isWin) {
-        let winAmount = pulseBet * winMult;
-        change = winAmount - pulseBet;
-        updateUIBalance(getRawBalance() + winAmount);
-        tg.showAlert("📈 ПРОФИТ!");
-        tg.HapticFeedback.notificationOccurred('success');
-    } else {
-        tg.showAlert("📉 УБЫТОК");
-        tg.HapticFeedback.notificationOccurred('error');
-    }
-
-    document.getElementById('pulse-close').style.display = 'block';
-    tg.sendData(JSON.stringify({ action: "game_result", amount: change }));
-}
-
-function closePulse() {
-    document.getElementById('pulse-overlay').style.display = 'none';
-    cancelAnimationFrame(pulseAnimId);
 }
 
        
