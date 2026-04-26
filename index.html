@@ -399,7 +399,14 @@
         const amount = parseInt(val.replace(/\D/g, ''));
         if (amount > 0) startCoinGame(amount);
     }
-}       
+}  
+      else if (name.includes("Мины") || name.includes("мины")) {
+    const val = prompt("Надеюсь у тебя есть запасная жизнь?:", "100");
+    if (val) {
+        const amount = parseInt(val.replace(/\D/g, ''));
+        if (amount > 0) startMines(amount);
+    }
+}            
 
     else {
         tg.showAlert(`Игра "${g.n}" в разработке 🛠`);
