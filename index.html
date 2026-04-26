@@ -436,45 +436,56 @@
     ];
 
     // Функция отрисовки карточек
-    function renderGames() {
+   function renderGames() {
     const grid = document.getElementById('games-list');
     if (!grid) return;
-    grid.innerHTML = ""; 
+    grid.innerHTML = "";
 
     gameLibrary.forEach(g => {
         const div = document.createElement('div');
         div.style = "background:var(--card); border-radius:20px; padding:20px; border:1px solid #222; text-align:center; position:relative; cursor:pointer;";
         
         div.onclick = () => {
-            tg.HapticFeedback.impactOccurred('medium');
-            const name = g.n.toLowerCase(); // ОБЪЯВЛЯЕМ ОДИН РАЗ ЗДЕСЬ
+            if (window.Telegram?.WebApp?.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('medium');
+            }
+            
+            const name = g.n.toLowerCase();
+
+            const getBet = (title, callback) => {
+                const val = prompt(title, "100");
+                if (val) {
+                    const amount = parseInt(val.replace(/\D/g, ''));
+                    if (amount > 0) callback(amount);
+                }
+            };
 
             if (name.includes("кубик")) {
                 openBetPopup();
             } 
-            else if (name.includes("классик")) {
-                handleBet(startSlots);
+            else if (name.includes("классик") || name.includes("классик") || name.includes("золото") || name.includes("фрукт") || name.includes("египет")) {
+                getBet("Ставка на Слоты 🎰:", startSlots);
             } 
             else if (name.includes("цель")) {
-                handleBet(startTargetGame);
+                getBet("Ставка на Меткость 🎯:", startTargetGame);
             } 
             else if (name.includes("ракет")) {
-                handleBet(startRocket);
+                getBet("Ставка на Полет 🚀:", startRocket);
             }
             else if (name.includes("орел") || name.includes("решк")) {
-                handleBet(startCoinGame);
+                getBet("Орел или Решка?:", startCoinGame);
             }  
             else if (name.includes("мины")) {
-                handleBet(startMines);
+                getBet("Ставка на Мины 💣:", startMines);
             }            
-            else if (name.includes("крипта") || name.includes("кейс")) {
-                handleBet(startBoxes);
+            else if (name.includes("кейс") || name.includes("крипта") || name.includes("nft")) {
+                getBet("Ставка на Сундуки 🎁:", startBoxes);
             }
             else if (name.includes("stable")) {
-                handleBet((amt) => startPulse(amt, 'stable'));
+                getBet("Ставка на ПУЛЬС Stable:", (amt) => startPulse(amt, 'stable'));
             } 
             else if (name.includes("x100")) {
-                handleBet((amt) => startPulse(amt, 'x100'));
+                getBet("Ставка на ПУЛЬС X100:", (amt) => startPulse(amt, 'x100'));
             }
             else {
                 tg.showAlert(`Игра "${g.n}" в разработке 🛠`);
