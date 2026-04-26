@@ -436,97 +436,64 @@
     ];
 
     // Функция отрисовки карточек
-                function renderGames() {
-        const grid = document.getElementById('games-list');
-        if (!grid) return;
-        grid.innerHTML = ""; 
-
-        gameLibrary.forEach(g => {
-            const div = document.createElement('div');
-            div.style = "background:var(--card); border-radius:20px; padding:20px; border:1px solid #222; text-align:center; position:relative; cursor:pointer;";
-            
-           div.onclick = () => {
+    div.onclick = () => {
     tg.HapticFeedback.impactOccurred('medium');
     const name = g.n.toLowerCase();
 
-    if (name.includes("кубик") || name.includes("кост")) {
+    // 1. Проверяем ввод ставки через prompt
+    const getAmount = (title) => {
+        const val = prompt(title, "100");
+        return val ? parseInt(val.replace(/\D/g, '')) : null;
+    };
+
+    // 2. Логика выбора игры
+    if (name.includes("кубик")) {
         openBetPopup();
     } 
     else if (name.includes("классик")) {
-        const val = prompt("Ставка на Слоты 🎰:", "100");
-        if (val) {
-            const amount = parseInt(val.replace(/\D/g, ''));
-            if (amount > 0) startSlots(amount);
-        }
+        const amt = getAmount("Ставка на Слоты 🎰:");
+        if (amt > 0) startSlots(amt);
     } 
     else if (name.includes("цель")) {
-        const val = prompt("Ставка на Меткость 🎯:", "100");
-        if (val) {
-            const amount = parseInt(val.replace(/\D/g, ''));
-            if (amount > 0) startTargetGame(amount);
-        }
+        const amt = getAmount("Ставка на Меткость 🎯:");
+        if (amt > 0) startTargetGame(amt);
     } 
-        else if (name.includes("краш") || name.includes("ракет")) {
-    const val = prompt("Ставка на Полет 🚀:", "100");
-    if (val) {
-        const amount = parseInt(val.replace(/\D/g, ''));
-        if (amount > 0) startRocket(amount);
+    else if (name.includes("ракет")) {
+        const amt = getAmount("Ставка на Полет 🚀:");
+        if (amt > 0) startRocket(amt);
     }
-}
-      else if (name.includes("орел") || name.includes("решк")) {
-    const val = prompt("Орел или Решка?:", "100");
-    if (val) {
-        const amount = parseInt(val.replace(/\D/g, ''));
-        if (amount > 0) startCoinGame(amount);
+    else if (name.includes("орел") || name.includes("решк")) {
+        const amt = getAmount("Орел или Решка?:");
+        if (amt > 0) startCoinGame(amt);
+    }  
+    else if (name.includes("мины")) {
+        const amt = getAmount("Ставка на мины 💣:");
+        if (amt > 0) startMines(amt);
+    }            
+    else if (name.includes("крипта") || name.includes("кейс") || name.includes("nft")) {
+        const amt = getAmount("Ставка на Сундуки 🎁:");
+        if (amt > 0) startBoxes(amt);
     }
-}  
-      else if (name.includes("Мины") || name.includes("мины")) {
-    const val = prompt("Надеюсь у тебя есть запасная жизнь?:", "100");
-    if (val) {
-        const amount = parseInt(val.replace(/\D/g, ''));
-        if (amount > 0) startMines(amount);
+    else if (name.includes("stable")) {
+        const amt = getAmount("Ставка на ПУЛЬС (Stable x2):");
+        if (amt > 0) startPulse(amt, 'stable');
+    } 
+    else if (name.includes("x100")) {
+        const amt = getAmount("Ставка на ПУЛЬС (X100 x5):");
+        if (amt > 0) startPulse(amt, 'x100');
     }
-}            
-      else if (name.includes("крипта") || name.includes("коробк")) {
-    const val = prompt("Ставка на Сундуки 🎁:", "100");
-    if (val) {
-        const amount = parseInt(val.replace(/\D/g, ''));
-        if (amount > 0) startBoxes(amount);
-    }
-}
-      const name = g.n.toLowerCase();
-
-if (name.includes("pulse stable")) {
-    const val = prompt("Ставка на ПУЛЬС (Stable x2):", "100");
-    if (val) {
-        const amount = parseInt(val.replace(/\D/g, ''));
-        if (amount > 0) startPulse(amount, 'stable');
-    }
-} 
-else if (name.includes("pulse x100")) {
-    const val = prompt("Ставка на ПУЛЬС (X100 x5):", "100");
-    if (val) {
-        const amount = parseInt(val.replace(/\D/g, ''));
-        if (amount > 0) startPulse(amount, 'x100');
-    }
-}
-          
     else {
         tg.showAlert(`Игра "${g.n}" в разработке 🛠`);
     }
 };
 
-
-
-
-            div.innerHTML = `
-                ${g.pvp ? '<span style="position:absolute;top:8px;right:8px;background:var(--accent);font-size:8px;padding:2px 6px;border-radius:8px;font-weight:bold;">PVP</span>' : ''}
-                <div style="font-size:38px;margin-bottom:10px;">${g.i}</div>
-                <div style="font-size:13px;font-weight:bold;">${g.n}</div>
-            `;
-            grid.appendChild(div);
-        });
-    }
+// В самом конце отрисовки:
+div.innerHTML = `
+    ${g.pvp ? '<span style="position:absolute;top:8px;right:8px;background:var(--accent);font-size:8px;padding:2px 6px;border-radius:8px;font-weight:bold;">PVP</span>' : ''}
+    <div style="font-size:38px;margin-bottom:10px;">${g.i}</div>
+    <div style="font-size:13px;font-weight:bold;">${g.n}</div>
+`;
+grid.appendChild(div);
 
 
 // 4. ОКНО ВЫБОРА СТАВКИ
