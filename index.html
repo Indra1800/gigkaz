@@ -1225,7 +1225,7 @@ function closeBoxes() {
 }
 
 /*ПУЛЬС*/
-  let pulseCtx, pulseCanvas, pulseAnimId;
+ let pulseCtx, pulseCanvas, pulseAnimId;
 let priceHistory = [];
 let currentPrice = 50;
 let isTrading = false;
@@ -1233,6 +1233,7 @@ let pulseMode = 'stable';
 let tradePrice = 0;
 let tradeDirection = ''; 
 let pulseBet = 0;
+let entryPrice = null;
 
 function startPulse(bet, mode) {
     if (getRawBalance() < bet) return tg.showAlert("Недостаточно 💎!");
@@ -1240,25 +1241,19 @@ function startPulse(bet, mode) {
     pulseBet = bet;
     pulseMode = mode;
     isTrading = false;
+    entryPrice = null;
     currentPrice = 50;
-    priceHistory = Array(50).fill(50);
+    priceHistory = Array(60).fill(50);
     
     updateUIBalance(getRawBalance() - bet);
-    
-    const pulseBalEl = document.getElementById('pulse-bal');
-    const pulseBetEl = document.getElementById('pulse-bet-display');
-    if(pulseBalEl) pulseBalEl.innerText = getRawBalance().toLocaleString();
-    if(pulseBetEl) pulseBetEl.innerText = "Ставка: " + bet;
     
     const overlay = document.getElementById('pulse-overlay');
     overlay.style.display = 'flex';
     document.getElementById('pulse-controls').style.display = 'grid';
     document.getElementById('pulse-close').style.display = 'none';
     document.getElementById('pulse-title').innerText = mode === 'x100' ? "PULSE X100" : "PULSE STABLE";
-    document.getElementById('pulse-timer').innerText = mode === 'x100' ? "Таймфрейм: 10s" : "Таймфрейм: 30s";
-
+    
     initCanvas();
-    // Останавливаем старую анимацию перед запуском новой
     if (pulseAnimId) cancelAnimationFrame(pulseAnimId);
     animatePulse();
 }
@@ -1266,30 +1261,26 @@ function startPulse(bet, mode) {
 function initCanvas() {
     pulseCanvas = document.getElementById('pulse-canvas');
     pulseCtx = pulseCanvas.getContext('2d');
-    // Корректная установка размеров
-    pulseCanvas.width = pulseCanvas.clientWidth || 300;
-    pulseCanvas.height = pulseCanvas.clientHeight || 200;
+    pulseCanvas.width = pulseCanvas.clientWidth;
+    pulseCanvas.height = pulseCanvas.clientHeight;
 }
 
 function animatePulse() {
-    // Если окно закрыто — прекращаем цикл анимации полностью
     if (document.getElementById('pulse-overlay').style.display === 'none') {
         cancelAnimationFrame(pulseAnimId);
         return;
     }
 
-    let volatility = pulseMode === 'x100' ? 3.5 : 1.2;
-    currentPrice += (Math.random() - 0.5) * volatility;
+    let vol = pulseMode === 'x100' ? 3.0 : 1.0;
+    currentPrice += (Math.random() - 0.5) * vol;
     
     if (currentPrice < 10) currentPrice = 10;
     if (currentPrice > 90) currentPrice = 90;
 
     priceHistory.push(currentPrice);
-    if (priceHistory.length > 60) priceHistory.shift();
+    if (priceHistory.length > 80) priceHistory.shift();
 
     drawChart();
-    
-    // Цикл работает всегда, пока открыто окно
     pulseAnimId = requestAnimationFrame(animatePulse);
 }
 
@@ -1299,15 +1290,39 @@ function drawChart() {
     const h = pulseCanvas.height;
     ctx.clearRect(0, 0, w, h);
 
-    ctx.strokeStyle = '#2b2f36';
+    ctx.strokeStyle = '#1e2329';
     ctx.lineWidth = 1;
-    for(let i=0; i<h; i+=40) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(w,i); ctx.stroke(); }
+    for(let i=0; i<h; i+=h/6) {
+        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(w, i); ctx.stroke();
+    }
+
+    if (isTrading && entryPrice !== null) {
+        const entryY = h - (entryPrice * (h/100));
+        ctx.strokeStyle = '#f0b90b';
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath(); ctx.moveTo(0, entryY); ctx.lineTo(w, entryY); ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    const gradient = ctx.createLinearGradient(0, 0, 0, h);
+    const mColor = pulseMode === 'x100' ? 'rgba(157, 78, 221, 0.3)' : 'rgba(46, 189, 133, 0.3)';
+    gradient.addColorStop(0, mColor);
+    gradient.addColorStop(1, 'transparent');
+
+    ctx.beginPath();
+    ctx.fillStyle = gradient;
+    for(let i=0; i<priceHistory.length; i++) {
+        let x = (w / (priceHistory.length-1)) * i;
+        let y = h - (priceHistory[i] * (h/100));
+        if(i === 0) ctx.moveTo(x, h);
+        ctx.lineTo(x, y);
+        if(i === priceHistory.length - 1) ctx.lineTo(x, h);
+    }
+    ctx.fill();
 
     ctx.beginPath();
     ctx.strokeStyle = pulseMode === 'x100' ? '#9d4edd' : '#2ebd85';
     ctx.lineWidth = 3;
-    ctx.lineJoin = 'round';
-
     for(let i=0; i<priceHistory.length; i++) {
         let x = (w / (priceHistory.length-1)) * i;
         let y = h - (priceHistory[i] * (h/100));
@@ -1317,16 +1332,23 @@ function drawChart() {
 
     const lastY = h - (currentPrice * (h/100));
     const priceTag = document.getElementById('price-tag');
-    priceTag.style.top = lastY + 'px';
+    priceTag.style.top = (lastY - 10) + 'px';
     priceTag.innerText = (currentPrice + 100).toFixed(2);
+
+    if (isTrading) {
+        const win = (tradeDirection === 'up' && currentPrice > entryPrice) || (tradeDirection === 'down' && currentPrice < entryPrice);
+        priceTag.style.background = win ? '#2ebd85' : '#f6465d';
+    }
 }
 
 function tradePulse(dir) {
-    if(isTrading) return; // Защита от двойного клика
+    if(isTrading) return;
     isTrading = true;
     tradeDirection = dir;
-    tradePrice = currentPrice;
+    entryPrice = currentPrice;
+    
     document.getElementById('pulse-controls').style.display = 'none';
+    tg.HapticFeedback.impactOccurred('medium');
     
     let timer = pulseMode === 'x100' ? 10 : 30;
     let timerInterval = setInterval(() => {
@@ -1343,21 +1365,18 @@ function finishPulse() {
     let isWin = false;
     let winMult = pulseMode === 'x100' ? 5 : 2;
     
-    if (tradeDirection === 'up' && currentPrice > tradePrice) isWin = true;
-    if (tradeDirection === 'down' && currentPrice < tradePrice) isWin = true;
-
-    // Слив на больших ставках
-    if (pulseBet > 1500 && Math.random() < 0.4) isWin = false; 
+    if (tradeDirection === 'up' && currentPrice > entryPrice) isWin = true;
+    if (tradeDirection === 'down' && currentPrice < entryPrice) isWin = true;
 
     let change = -pulseBet;
     if (isWin) {
         let winAmount = pulseBet * winMult;
         change = winAmount - pulseBet;
         updateUIBalance(getRawBalance() + winAmount);
-        tg.showAlert(`📈 В ПЛЮСЕ! +${winAmount} 💎`);
+        tg.showAlert("📈 ПРОФИТ!");
         tg.HapticFeedback.notificationOccurred('success');
     } else {
-        tg.showAlert("📉 Сделка закрыта в убыток");
+        tg.showAlert("📉 УБЫТОК");
         tg.HapticFeedback.notificationOccurred('error');
     }
 
@@ -1367,7 +1386,7 @@ function finishPulse() {
 
 function closePulse() {
     document.getElementById('pulse-overlay').style.display = 'none';
-    cancelAnimationFrame(pulseAnimId); // Важно: убиваем процесс
+    cancelAnimationFrame(pulseAnimId);
 }
 
        
