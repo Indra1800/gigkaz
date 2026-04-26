@@ -287,6 +287,22 @@
         </nav>
     </div>
 
+
+    <!-- ИГРА: МИНЫ -->
+<div id="mines-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999; flex-direction:column; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
+    <div style="text-align:center; width:90%;">
+        <h2 style="color:white; margin-bottom:10px;">💣 МИНЫ</h2>
+        <div id="mines-grid" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; margin: 20px auto; max-width:300px;">
+            <!-- Сетка 5x5 создастся через JS -->
+        </div>
+        <p id="mines-status" style="color:var(--gray);">Выберите ячейку</p>
+        <div style="display:flex; gap:10px; justify-content:center;">
+            <button id="mines-cashout" onclick="minesCashout()" style="display:none; background:var(--success); border:none; color:white; padding:12px 25px; border-radius:12px; font-weight:bold;">ЗАБРАТЬ 💎</button>
+            <button id="mines-close" onclick="closeMines()" style="display:none; background:var(--accent); border:none; color:white; padding:12px 25px; border-radius:12px; font-weight:bold;">ВЫХОД</button>
+        </div>
+    </div>
+</div>
+
    <script>
         const tg = window.Telegram.WebApp;
         let tonConnectUI;
@@ -954,6 +970,98 @@ function playCoin(userChoice) {
 
 function closeCoin() {
     document.getElementById('coin-overlay').style.display = 'none';
+}
+
+
+       let minesField = [];
+let minesBet = 0;
+let openedCount = 0;
+const totalMines = 3; // Можно сделать выбор сложности
+
+function startMines(bet) {
+    if (getRawBalance() < bet) return tg.showAlert("Недостаточно 💎!");
+    
+    minesBet = bet;
+    openedCount = 0;
+    updateUIBalance(getRawBalance() - bet);
+    
+    document.getElementById('mines-overlay').style.display = 'flex';
+    document.getElementById('mines-status').innerText = "На поле 3 мины. Удачи!";
+    document.getElementById('mines-cashout').style.display = 'none';
+    document.getElementById('mines-close').style.display = 'none';
+    
+    generateMinesField();
+}
+
+function generateMinesField() {
+    const grid = document.getElementById('mines-grid');
+    grid.innerHTML = '';
+    minesField = Array(25).fill(false);
+    
+    // Расставляем мины
+    let planted = 0;
+    while(planted < totalMines) {
+        let idx = Math.floor(Math.random() * 25);
+        if(!minesField[idx]) { minesField[idx] = true; planted++; }
+    }
+
+    // Создаем кнопки
+    for(let i=0; i<25; i++) {
+        let btn = document.createElement('div');
+        btn.style = "width:50px; height:50px; background:#222; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:20px; cursor:pointer; border:1px solid #333;";
+        btn.onclick = () => revealMinesCell(i, btn);
+        grid.appendChild(btn);
+    }
+}
+
+function revealMinesCell(idx, element) {
+    if (element.innerText !== "" || minesBet === 0) return;
+
+    if (minesField[idx]) {
+        // ВЗРЫВ
+        element.innerText = "💣";
+        element.style.background = "var(--error)";
+        endMines(false);
+    } else {
+        // БЕЗОПАСНО
+        openedCount++;
+        element.innerText = "💎";
+        element.style.background = "#2d1b4d";
+        tg.HapticFeedback.impactOccurred('light');
+        
+        let currentMult = (1 + openedCount * 0.2).toFixed(2);
+        document.getElementById('mines-status').innerText = `Множитель: ${currentMult}x`;
+        document.getElementById('mines-cashout').style.display = 'inline-block';
+        document.getElementById('mines-cashout').innerText = `ЗАБРАТЬ ${Math.floor(minesBet * currentMult)} 💎`;
+    }
+}
+
+function endMines(isWin) {
+    minesBet = 0; // Блокируем клики
+    document.getElementById('mines-cashout').style.display = 'none';
+    document.getElementById('mines-close').style.display = 'inline-block';
+    
+    if (!isWin) {
+        document.getElementById('mines-status').innerText = "БОМБА! Ставка проиграна.";
+        tg.HapticFeedback.notificationOccurred('error');
+        tg.sendData(JSON.stringify({ action: "game_result", amount: -minesBet })); // Тут логика фиксации
+    }
+}
+
+function minesCashout() {
+    let mult = (1 + openedCount * 0.2);
+    let win = Math.floor(minesBet * mult);
+    updateUIBalance(getRawBalance() + win);
+    
+    document.getElementById('mines-status').innerHTML = `<span style="color:var(--success)">ВЫИГРЫШ: ${win} 💎</span>`;
+    endMines(true);
+    
+    tg.HapticFeedback.notificationOccurred('success');
+    tg.sendData(JSON.stringify({ action: "game_result", amount: win - minesBet }));
+}
+
+function closeMines() {
+    document.getElementById('mines-overlay').style.display = 'none';
 }
 
        
