@@ -1049,7 +1049,7 @@ function closeCoin() {
     document.getElementById('coin-overlay').style.display = 'none';
 }
 
-
+/*МИНЫ*/
        let minesField = [];
 let minesBet = 0;
 let openedCount = 0;
@@ -1218,13 +1218,13 @@ function closeBoxes() {
 }
 
 /*ПУЛЬС*/
-       let pulseCtx, pulseCanvas;
+  let pulseCtx, pulseCanvas, pulseAnimId;
 let priceHistory = [];
 let currentPrice = 50;
 let isTrading = false;
-let pulseMode = 'stable'; // 'stable' или 'x100'
+let pulseMode = 'stable'; 
 let tradePrice = 0;
-let tradeDirection = ''; // 'up' или 'down'
+let tradeDirection = ''; 
 let pulseBet = 0;
 
 function startPulse(bet, mode) {
@@ -1237,34 +1237,43 @@ function startPulse(bet, mode) {
     priceHistory = Array(50).fill(50);
     
     updateUIBalance(getRawBalance() - bet);
-    document.getElementById('pulse-bal').innerText = getRawBalance();
-    document.getElementById('pulse-bet-display').innerText = "Ставка: " + bet;
+    
+    const pulseBalEl = document.getElementById('pulse-bal');
+    const pulseBetEl = document.getElementById('pulse-bet-display');
+    if(pulseBalEl) pulseBalEl.innerText = getRawBalance().toLocaleString();
+    if(pulseBetEl) pulseBetEl.innerText = "Ставка: " + bet;
     
     const overlay = document.getElementById('pulse-overlay');
     overlay.style.display = 'flex';
     document.getElementById('pulse-controls').style.display = 'grid';
     document.getElementById('pulse-close').style.display = 'none';
     document.getElementById('pulse-title').innerText = mode === 'x100' ? "PULSE X100" : "PULSE STABLE";
-    
+    document.getElementById('pulse-timer').innerText = mode === 'x100' ? "Таймфрейм: 10s" : "Таймфрейм: 30s";
+
     initCanvas();
+    // Останавливаем старую анимацию перед запуском новой
+    if (pulseAnimId) cancelAnimationFrame(pulseAnimId);
     animatePulse();
 }
 
 function initCanvas() {
     pulseCanvas = document.getElementById('pulse-canvas');
     pulseCtx = pulseCanvas.getContext('2d');
-    pulseCanvas.width = pulseCanvas.parentElement.clientWidth;
-    pulseCanvas.height = pulseCanvas.parentElement.clientHeight;
+    // Корректная установка размеров
+    pulseCanvas.width = pulseCanvas.clientWidth || 300;
+    pulseCanvas.height = pulseCanvas.clientHeight || 200;
 }
 
 function animatePulse() {
-    if (document.getElementById('pulse-overlay').style.display === 'none') return;
+    // Если окно закрыто — прекращаем цикл анимации полностью
+    if (document.getElementById('pulse-overlay').style.display === 'none') {
+        cancelAnimationFrame(pulseAnimId);
+        return;
+    }
 
-    // Генерация новой цены
-    let volatility = pulseMode === 'x100' ? 4 : 1.5;
+    let volatility = pulseMode === 'x100' ? 3.5 : 1.2;
     currentPrice += (Math.random() - 0.5) * volatility;
     
-    // Ограничение, чтобы не уходил за края
     if (currentPrice < 10) currentPrice = 10;
     if (currentPrice > 90) currentPrice = 90;
 
@@ -1273,9 +1282,8 @@ function animatePulse() {
 
     drawChart();
     
-    if (!isTrading) {
-        requestAnimationFrame(animatePulse);
-    }
+    // Цикл работает всегда, пока открыто окно
+    pulseAnimId = requestAnimationFrame(animatePulse);
 }
 
 function drawChart() {
@@ -1284,14 +1292,12 @@ function drawChart() {
     const h = pulseCanvas.height;
     ctx.clearRect(0, 0, w, h);
 
-    // Сетка
     ctx.strokeStyle = '#2b2f36';
     ctx.lineWidth = 1;
     for(let i=0; i<h; i+=40) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(w,i); ctx.stroke(); }
 
-    // Линия графика
     ctx.beginPath();
-    ctx.strokeStyle = pulseMode === 'x100' ? '#9d4edd' : '#3390ec';
+    ctx.strokeStyle = pulseMode === 'x100' ? '#9d4edd' : '#2ebd85';
     ctx.lineWidth = 3;
     ctx.lineJoin = 'round';
 
@@ -1302,13 +1308,14 @@ function drawChart() {
     }
     ctx.stroke();
 
-    // Метка цены
     const lastY = h - (currentPrice * (h/100));
-    document.getElementById('price-tag').style.top = lastY + 'px';
-    document.getElementById('price-tag').innerText = (currentPrice + 100).toFixed(2);
+    const priceTag = document.getElementById('price-tag');
+    priceTag.style.top = lastY + 'px';
+    priceTag.innerText = (currentPrice + 100).toFixed(2);
 }
 
 function tradePulse(dir) {
+    if(isTrading) return; // Защита от двойного клика
     isTrading = true;
     tradeDirection = dir;
     tradePrice = currentPrice;
@@ -1317,37 +1324,33 @@ function tradePulse(dir) {
     let timer = pulseMode === 'x100' ? 10 : 30;
     let timerInterval = setInterval(() => {
         timer--;
-        document.getElementById('pulse-timer').innerText = `Закрытие через: ${timer}s`;
+        document.getElementById('pulse-timer').innerText = `Закрытие: ${timer}s`;
         if (timer <= 0) {
             clearInterval(timerInterval);
             finishPulse();
         }
     }, 1000);
-    
-    requestAnimationFrame(animatePulse);
 }
 
 function finishPulse() {
-    isTrading = false;
     let isWin = false;
     let winMult = pulseMode === 'x100' ? 5 : 2;
     
-    // Проверка результата
     if (tradeDirection === 'up' && currentPrice > tradePrice) isWin = true;
     if (tradeDirection === 'down' && currentPrice < tradePrice) isWin = true;
 
-    // Подкрутка шанса (зависит от ставки)
-    if (pulseBet > 1000 && Math.random() < 0.3) isWin = false; 
+    // Слив на больших ставках
+    if (pulseBet > 1500 && Math.random() < 0.4) isWin = false; 
 
     let change = -pulseBet;
     if (isWin) {
         let winAmount = pulseBet * winMult;
         change = winAmount - pulseBet;
         updateUIBalance(getRawBalance() + winAmount);
-        tg.showAlert(`🎉 ПРОФИТ! +${winAmount} 💎`);
+        tg.showAlert(`📈 В ПЛЮСЕ! +${winAmount} 💎`);
         tg.HapticFeedback.notificationOccurred('success');
     } else {
-        tg.showAlert("📉 Сделка в минус...");
+        tg.showAlert("📉 Сделка закрыта в убыток");
         tg.HapticFeedback.notificationOccurred('error');
     }
 
@@ -1357,8 +1360,8 @@ function finishPulse() {
 
 function closePulse() {
     document.getElementById('pulse-overlay').style.display = 'none';
+    cancelAnimationFrame(pulseAnimId); // Важно: убиваем процесс
 }
-
 
        
        
