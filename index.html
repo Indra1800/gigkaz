@@ -1343,7 +1343,6 @@ let entryPrice = null;
 let timeframe = 30; 
 let lastTickTime = 0;
 
-// 1. Настройка таймфрейма
 function setTimeframe(s, element) {
     if(isTrading) return; 
     timeframe = s;
@@ -1352,120 +1351,80 @@ function setTimeframe(s, element) {
     if(window.Telegram?.WebApp?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
 }
 
-// 2. Запуск игры
 function startPulse(bet, mode) {
     const bal = getRawBalance();
     if (bal < bet) return tg.showAlert("Недостаточно 💎!");
     
-    pulseBet = bet;
-    pulseMode = mode;
-    isTrading = false;
-    entryPrice = null;
-    currentPrice = 50;
-    priceHistory = Array(150).fill(50); // Наполняем историю
+    pulseBet = bet; pulseMode = mode; isTrading = false; entryPrice = null; currentPrice = 50;
+    priceHistory = Array(150).fill(50);
     
     updateUIBalance(bal - bet);
-    
-    // Обновляем текст в оверлее
     document.getElementById('pulse-bal').innerText = (bal - bet).toLocaleString();
     document.getElementById('pulse-bet-display').innerText = "Ставка: " + bet;
     document.getElementById('pulse-title').innerText = mode === 'x100' ? "PULSE X100" : "PULSE STABLE";
     document.getElementById('pulse-timer').innerText = "READY";
     document.getElementById('pulse-timer').style.color = "#848e9c";
 
-    const overlay = document.getElementById('pulse-overlay');
-    overlay.style.display = 'flex';
+    document.getElementById('pulse-overlay').style.display = 'flex';
     document.getElementById('pulse-controls').style.display = 'grid';
     document.getElementById('pulse-close').style.display = 'none';
 
-    // Инициализация Canvas с задержкой, чтобы он успел получить размеры
     setTimeout(() => {
-        initPulseCanvas();
+        pulseCanvas = document.getElementById('pulse-canvas');
+        pulseCtx = pulseCanvas.getContext('2d');
+        pulseCanvas.width = pulseCanvas.offsetWidth;
+        pulseCanvas.height = pulseCanvas.offsetHeight;
         if (pulseAnimId) cancelAnimationFrame(pulseAnimId);
         pulseAnimId = requestAnimationFrame(animatePulse);
     }, 50);
 }
 
-function initPulseCanvas() {
-    pulseCanvas = document.getElementById('pulse-canvas');
-    pulseCtx = pulseCanvas.getContext('2d');
-    
-    // Принудительно ставим размеры из CSS
-    pulseCanvas.width = pulseCanvas.offsetWidth;
-    pulseCanvas.height = pulseCanvas.offsetHeight;
-}
-
 function animatePulse(timestamp) {
     if (document.getElementById('pulse-overlay').style.display === 'none') return;
-
-    // Частота обновления (скорость графика)
     let tickSpeed = pulseMode === 'x100' ? 60 : 160; 
-    
     if (timestamp - lastTickTime > tickSpeed) {
-        let volatility = pulseMode === 'x100' ? 8.0 : 2.5;
-        let change = (Math.random() - 0.5) * volatility;
-        
-        currentPrice += change;
-        if (currentPrice < 5) currentPrice = 5;
-        if (currentPrice > 95) currentPrice = 95;
-
+        let vol = pulseMode === 'x100' ? 8.0 : 2.5;
+        currentPrice += (Math.random() - 0.5) * vol;
+        if (currentPrice < 5) currentPrice = 5; if (currentPrice > 95) currentPrice = 95;
         priceHistory.push(currentPrice);
         if (priceHistory.length > 200) priceHistory.shift();
-        
         lastTickTime = timestamp;
     }
-
     drawPulseChart();
     pulseAnimId = requestAnimationFrame(animatePulse);
 }
 
 function drawPulseChart() {
-    const ctx = pulseCtx;
-    const w = pulseCanvas.width;
-    const h = pulseCanvas.height;
+    const ctx = pulseCtx; const w = pulseCanvas.width; const h = pulseCanvas.height;
     if (!ctx) return;
-
     ctx.clearRect(0, 0, w, h);
-
-    // Сетка
-    ctx.strokeStyle = '#1e2329';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#1e2329'; ctx.lineWidth = 1;
     for(let i=0; i<w; i+=w/10) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,h); ctx.stroke(); }
     for(let i=0; i<h; i+=h/6) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(w,i); ctx.stroke(); }
 
-    // Линия входа
     if (isTrading && entryPrice !== null) {
         let y = h - (entryPrice * (h/100));
-        ctx.strokeStyle = '#f0b90b';
-        ctx.setLineDash([5, 5]);
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-        ctx.setLineDash([]);
+        ctx.strokeStyle = '#f0b90b'; ctx.setLineDash([5, 5]);
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); ctx.setLineDash([]);
     }
 
-    // ТИКОВЫЙ ГРАФИК
     ctx.beginPath();
     ctx.strokeStyle = pulseMode === 'x100' ? '#9d4edd' : '#2ebd85';
-    ctx.lineWidth = 3;
-    ctx.lineJoin = 'miter'; 
-
-    let visiblePoints = timeframe * 2; 
+    ctx.lineWidth = 3; ctx.lineJoin = 'miter';
+    let visiblePoints = timeframe * 2;
     let step = w / visiblePoints;
     let startIdx = Math.max(0, priceHistory.length - visiblePoints);
-
     for(let i = 0; i < visiblePoints; i++) {
         let val = priceHistory[startIdx + i];
-        let x = i * step;
-        let y = h - (val * (h/100));
+        let x = i * step; let y = h - (val * (h/100));
         if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
     ctx.stroke();
 
-    // Метка цены
     let lastY = h - (currentPrice * (h/100));
     let tag = document.getElementById('price-tag');
     tag.style.top = (lastY - 15) + 'px';
     tag.innerText = (currentPrice + 100).toFixed(2);
-
     if (isTrading) {
         let win = (tradeDirection === 'up' && currentPrice > entryPrice) || (tradeDirection === 'down' && currentPrice < entryPrice);
         tag.style.background = win ? '#2ebd85' : '#f6465d';
@@ -1474,36 +1433,50 @@ function drawPulseChart() {
 
 function tradePulse(dir) {
     if(isTrading) return;
-    isTrading = true;
-    tradeDirection = dir;
-    entryPrice = currentPrice;
-    
+    isTrading = true; tradeDirection = dir; entryPrice = currentPrice;
     document.getElementById('pulse-controls').style.display = 'none';
-    document.getElementById('pulse-timer').style.color = "var(--accent)";
-    
-    let timer = timeframe; 
+    let timer = timeframe;
     let timerInterval = setInterval(() => {
         timer--;
         document.getElementById('pulse-timer').innerText = `CLOSE: ${timer}s`;
-        if (timer <= 0) {
-            clearInterval(timerInterval);
-            finishPulse();
-        }
+        document.getElementById('pulse-timer').style.color = "var(--accent)";
+        if (timer <= 0) { clearInterval(timerInterval); finishPulse(); }
     }, 1000);
+}
+
+function finishPulse() {
+    isTrading = false;
+    let winMult = pulseMode === 'x100' ? 5 : 2;
+    let isWin = (tradeDirection === 'up' && currentPrice > entryPrice) || (tradeDirection === 'down' && currentPrice < entryPrice);
+    let change = -pulseBet;
+    if (isWin) {
+        let winAmt = Math.floor(pulseBet * winMult);
+        change = winAmt - pulseBet;
+        updateUIBalance(getRawBalance() + winAmt);
+        document.getElementById('pulse-timer').innerText = "WIN! 🔥";
+        document.getElementById('pulse-timer').style.color = "#2ebd85";
+        if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    } else {
+        document.getElementById('pulse-timer').innerText = "LOSS 📉";
+        document.getElementById('pulse-timer').style.color = "#f6465d";
+        if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+    }
+    document.getElementById('pulse-close').style.display = 'block';
+    tg.sendData(JSON.stringify({ action: "game_result", amount: change }));
 }
 
 function closePulse() {
     document.getElementById('pulse-overlay').style.display = 'none';
     cancelAnimationFrame(pulseAnimId);
 }
-       
+
        
 // 7. ГЛАВНЫЙ ЗАПУСК ПРИЛОЖЕНИЯ
        window.onload = function() {
         // 1. Инициализируем данные и интерфейс
         initApp();
         renderGames();
-        //initTon();
+        initTon();
 
         // 2. Скрываем лоадер через 1.5 секунды
         setTimeout(() => {
