@@ -645,7 +645,7 @@ function openBetPopup() {
 }
 
 
-// 5. ОСНОВНАЯ ЛОГИКА ИГРЫ КУБИК
+// 5. ОСНОВНАЯ ЛОГИКА ИГРЫ КУБИК (С ДИНАМИЧЕСКИМИ ШАНСАМИ)
 function startDiceGame(bet) {
     const balLabel = document.getElementById('top-bal');
     const arenaBal = document.getElementById('arena-bal');
@@ -660,7 +660,7 @@ function startDiceGame(bet) {
         return;
     }
 
-    // Списываем ставку сразу
+    // Списываем ставку
     currentBal -= bet;
     balLabel.innerText = currentBal.toLocaleString();
     if (arenaBal) arenaBal.innerText = currentBal.toLocaleString();
@@ -671,7 +671,6 @@ function startDiceGame(bet) {
     status.innerText = "Испытываем удачу...";
     closeBtn.style.display = 'none';
 
-    // ЭФФЕКТ МЕЛЬКАНИЯ ГРАНЕЙ
     const faces = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
     let flicker = setInterval(() => {
         visual.innerText = faces[Math.floor(Math.random() * faces.length)];
@@ -681,38 +680,58 @@ function startDiceGame(bet) {
         clearInterval(flicker);
         visual.classList.remove('rolling');
         
-        const res = Math.floor(Math.random() * 6) + 1; // 1-6
+        // --- ЛОГИКА ДИНАМИЧЕСКИХ ШАНСОВ ---
+        let winProbability;
+        if (bet <= 10) {
+            winProbability = 0.55; // 55% шанс
+        } else if (bet <= 20) {
+            winProbability = 0.45; // 45% шанс
+        } else {
+            winProbability = 0.35; // 35% шанс для ставок 30+ (менее 40%)
+        }
+
+        const randomRoll = Math.random(); // Число от 0 до 1
+        let res;
+        let isWin = false;
+
+        if (randomRoll < winProbability) {
+            // ИГРОК ВЫИГРАЛ
+            res = 6; 
+            isWin = true;
+        } else {
+            // ИГРОК ПРОИГРАЛ (выпадет любое число от 1 до 5)
+            res = Math.floor(Math.random() * 5) + 1;
+            isWin = false;
+        }
+        // ---------------------------------
+
         visual.innerText = faces[res - 1];
+        let changeForDb = -bet;
 
-        let changeForDb = -bet; // По умолчанию проигрыш для базы
-
-        if (res === 6) {
-            // ПОБЕДА: Тройная выплата
+        if (isWin) {
+            // ПОБЕДА (в стиле 1win - зеленый цвет)
             const winAmount = bet * 3;
             currentBal += winAmount;
-            changeForDb = winAmount - bet; // Чистая прибыль (например, +200 при ставке 100)
+            changeForDb = winAmount - bet;
             
-            status.innerHTML = `<span style="color:#4cd137">🔥 ДЖЕКПОТ! +${winAmount} 💎</span>`;
+            status.innerHTML = `<span style="color:#22c55e">🔥 ПОБЕДА! +${winAmount} 💎</span>`;
             tg.HapticFeedback.notificationOccurred('success');
         } else {
-            // ПРОИГРЫШ
-            status.innerHTML = `<span style="color:#ff4757">Выпало ${res}. Попробуй еще раз!</span>`;
+            // ПРОИГРЫШ (в стиле 1win - красный цвет)
+            status.innerHTML = `<span style="color:#ff4d4d">Выпало ${res}. Попробуй еще раз!</span>`;
             tg.HapticFeedback.notificationOccurred('error');
         }
 
-        // Обновляем визуальный баланс
         balLabel.innerText = currentBal.toLocaleString();
         if (arenaBal) arenaBal.innerText = currentBal.toLocaleString();
         closeBtn.style.display = 'block';
 
-        // Отправляем результат в бот для обновления SQLite
         tg.sendData(JSON.stringify({
             action: "game_result",
             amount: changeForDb
         }));
     }, 1800);
 }
-
     // 8. ФУНКЦИЯ ЗАКРЫТИЯ КУБИКА
     function closeDice() {
         const overlay = document.getElementById('dice-overlay');
@@ -773,7 +792,11 @@ function startSlots(bet) {
     currentBal -= bet;
     updateUIBalance(currentBal);
 
-    const visual = [document.getElementById('reel1'), document.getElementById('reel2'), document.getElementById('reel3')];
+    const visual = [
+        document.getElementById('reel1'), 
+        document.getElementById('reel2'), 
+        document.getElementById('reel3')
+    ];
     const status = document.getElementById('slots-status');
     const closeBtn = document.getElementById('slots-close');
     
@@ -784,6 +807,18 @@ function startSlots(bet) {
     // Звук спина
     const sndSpin = document.getElementById('snd-spin');
     if(sndSpin) sndSpin.play();
+
+    // ОПРЕДЕЛЯЕМ ШАНС ПЕРЕД НАЧАЛОМ АНИМАЦИИ
+    let winProbability;
+    if (bet <= 10) {
+        winProbability = 0.55; // 55%
+    } else if (bet <= 20) {
+        winProbability = 0.45; // 45%
+    } else {
+        winProbability = 0.35; // 35% (для 30+)
+    }
+
+    const isWin = Math.random() < winProbability;
 
     // Анимация кручения
     let spins = 0;
@@ -796,18 +831,34 @@ function startSlots(bet) {
         spins++;
         if (spins > 20) {
             clearInterval(interval);
-            finishSlots(bet, visual, status, closeBtn);
+            // Передаем заранее определенный результат (isWin) в финальную функцию
+            finishSlots(bet, visual, status, closeBtn, isWin);
         }
     }, 80);
 }
 
-function finishSlots(bet, visual, status, closeBtn) {
-    // Определяем результат по весам
-    const results = [
-        slotPool[Math.floor(Math.random() * slotPool.length)],
-        slotPool[Math.floor(Math.random() * slotPool.length)],
-        slotPool[Math.floor(Math.random() * slotPool.length)]
-    ];
+function finishSlots(bet, visual, status, closeBtn, isWin) {
+    let results = [];
+
+    if (isWin) {
+        // ЕСЛИ ВЫИГРЫШ: Выбираем один случайный символ и ставим его на все 3 барабана
+        // Используем slotPool, чтобы редкие символы (семерки) выпадали реже даже при выигрыше
+        const winningSymbolId = slotPool[Math.floor(Math.random() * slotPool.length)];
+        results = [winningSymbolId, winningSymbolId, winningSymbolId];
+    } else {
+        // ЕСЛИ ПРОИГРЫШ: Генерируем случайные символы, пока они не станут РАЗНЫМИ
+        while (true) {
+            results = [
+                slotPool[Math.floor(Math.random() * slotPool.length)],
+                slotPool[Math.floor(Math.random() * slotPool.length)],
+                slotPool[Math.floor(Math.random() * slotPool.length)]
+            ];
+            // Проверяем, чтобы не выпало 3 одинаковых случайно
+            if (!(results[0] === results[1] && results[1] === results[2])) {
+                break;
+            }
+        }
+    }
 
     // Отрисовка финальных символов
     visual.forEach((r, i) => {
@@ -817,19 +868,20 @@ function finishSlots(bet, visual, status, closeBtn) {
     });
 
     let multiplier = 0;
-    // Проверка комбинации (3 в ряд)
+    // Проверка комбинации
     if (results[0] === results[1] && results[1] === results[2]) {
         const winner = results[0];
         if (winner === 'seven') multiplier = 5;
         else if (winner === 'gig') multiplier = 3;
-        else multiplier = 2; // Клубника или Вишня
+        else multiplier = 2; 
     }
 
     let change = -bet;
     if (multiplier > 0) {
         const winAmount = bet * multiplier;
         change = winAmount - bet;
-        status.innerHTML = `<span style="color:#4cd137">🔥 ВЫИГРЫШ: ${winAmount} 💎</span>`;
+        // Цвет выигрыша в стиле 1win
+        status.innerHTML = `<span style="color:#22c55e">🔥 ВЫИГРЫШ: ${winAmount} 💎</span>`;
         
         const sndWin = document.getElementById('snd-win');
         if(sndWin) sndWin.play();
@@ -837,13 +889,13 @@ function finishSlots(bet, visual, status, closeBtn) {
         
         updateUIBalance(getRawBalance() + winAmount);
     } else {
-        status.innerHTML = `<span style="color:#ff4757">Попробуй снова!</span>`;
+        // Цвет проигрыша в стиле 1win
+        status.innerHTML = `<span style="color:#ff4d4d">Попробуй снова!</span>`;
         tg.HapticFeedback.notificationOccurred('error');
     }
 
     closeBtn.style.display = 'inline-block';
 
-    // Отправка в базу
     tg.sendData(JSON.stringify({
         action: "game_result",
         amount: change
