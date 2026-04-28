@@ -564,15 +564,23 @@
 
     gameLibrary.forEach(g => {
         const div = document.createElement('div');
-        div.style = "background:var(--card); border-radius:20px; padding:20px; border:1px solid #222; text-align:center; position:relative; cursor:pointer;";
+        div.style = "background:var(--bg-secondary); border-radius:20px; padding:20px; border:1px solid #222; text-align:center; position:relative; cursor:pointer;";
         
         div.onclick = () => {
+            // Тактильная отдача при клике на карточку
             if (window.Telegram?.WebApp?.HapticFeedback) {
                 tg.HapticFeedback.impactOccurred('medium');
             }
             
             const name = g.n.toLowerCase();
 
+            // --- НОВАЯ ЛОГИКА (БЕЗ PROMPT) ---
+            if (name.includes("кубик")) {
+                return openDiceGame(); // Открываем внутреннее меню кубика
+            }
+
+            // --- СТАРАЯ ЛОГИКА (С СИСТЕМНЫМ ОКНОМ) ---
+            // Оставляем это для игр, которые еще не переделали
             const getBet = (title, callback) => {
                 const val = prompt(title, "100");
                 if (val) {
@@ -581,10 +589,7 @@
                 }
             };
 
-            if (name.includes("кубик")) {
-                openDiceGame()
-            } 
-            else if (name.includes("классик") || name.includes("классик") || name.includes("золото") || name.includes("фрукт") || name.includes("египет")) {
+            if (name.includes("классик") || name.includes("золото") || name.includes("фрукт") || name.includes("египет")) {
                 getBet("Ставка на Слоты 🎰:", startSlots);
             } 
             else if (name.includes("цель")) {
@@ -613,6 +618,7 @@
             }
         };
 
+        // Отрисовка самой карточки
         div.innerHTML = `
             ${g.pvp ? '<span style="position:absolute;top:8px;right:8px;background:var(--accent);font-size:8px;padding:2px 6px;border-radius:8px;font-weight:bold;">PVP</span>' : ''}
             <div style="font-size:38px;margin-bottom:10px;">${g.i}</div>
@@ -621,6 +627,7 @@
         grid.appendChild(div);
     });
 }
+
 
        /*ПРОВЕРКА ПОБЕДЫ*/
 function checkWin(bet) {
