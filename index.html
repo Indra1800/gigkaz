@@ -284,10 +284,15 @@
 
     <!-- 1. ОКНО ИГРЫ В КУБИК (ВЫНЕСЛИ ИЗ #APP ДЛЯ КОРРЕКТНОЙ АНИМАЦИИ) -->
         <div id="dice-overlay">
-        <div id="dice-visual" class="dice">?</div>
-        <h2 id="dice-status" style="color: #ffffff; margin-top: 25px; font-family: sans-serif; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">Крутим...</h2>
-        <button id="dice-close" onclick="closeDice()" style="display:none; background: var(--accent); border: none; color: #ffffff; padding: 12px 40px; border-radius: 12px; margin-top: 20px; font-weight: bold; font-size: 16px; cursor: pointer; box-shadow: 0 4px 20px rgba(157, 78, 221, 0.4);">ОК</button>
+    <div id="dice-visual" class="dice">?</div>
+    <div id="dice-bet-block" style="margin-top:20px;">
+        <input type="number" id="dice-input-bet" value="10" style="width:80px; padding:10px; border-radius:10px; border:none; text-align:center;">
+        <button onclick="playDiceStep()" style="background:var(--success); color:white; border:none; padding:10px 20px; border-radius:10px; font-weight:bold;">ИГРАТЬ</button>
     </div>
+    <h2 id="dice-status">Готовы?</h2>
+    <button onclick="closeDiceAndSend()" id="dice-close" style="background:gray; border:none; color:white; padding:10px 30px; border-radius:10px; margin-top:10px;">ВЫХОД</button>
+</div>
+
 
  <!-- 2. ОКНО ИГРЫ СЛОТЫ -->
 <div id="slots-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999; flex-direction:column; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
@@ -617,6 +622,28 @@
     });
 }
 
+       /*ПРОВЕРКА ПОБЕДЫ*/
+function checkWin(bet) {
+    const chance = bet <= 15 ? 0.35 : 0.20; // 35% для мелких, 20% для крупных
+    return Math.random() < chance;
+}
+
+       let sessionProfit = 0; // Накопленный выигрыш/проигрыш за все игры в одном окне
+
+function addToSession(amount) {
+    sessionProfit += amount;
+}
+
+// Эту функцию вызываем ТОЛЬКО при нажатии на кнопку "ВЫХОД" в игре
+function sendSessionToBot() {
+    if (sessionProfit !== 0) {
+        tg.sendData(JSON.stringify({
+            action: "game_result",
+            amount: sessionProfit
+        }));
+        sessionProfit = 0; // Сбрасываем после отправки
+    }
+}
 
 
 // 4. ОКНО ВЫБОРА СТАВКИ
@@ -646,98 +673,89 @@ function openBetPopup() {
 
 
 // 5. ОСНОВНАЯ ЛОГИКА ИГРЫ КУБИК (С ДИНАМИЧЕСКИМИ ШАНСАМИ)
-function startDiceGame(bet) {
-    const balLabel = document.getElementById('top-bal');
-    const arenaBal = document.getElementById('arena-bal');
-    const overlay = document.getElementById('dice-overlay');
+let diceSessionProfit = 0; // Накопленный профит за одну сессию игры
+
+// 1. Единая логика шансов (как ты просил)
+function getWinChance(bet) {
+    // До 15 кристаллов — 35%, более 15 — 20%
+    return bet <= 15 ? 0.35 : 0.20;
+}
+
+// 2. Функция запуска игры из Арены
+function openDiceGame() {
+    diceSessionProfit = 0; // Сбрасываем сессию при новом входе
+    document.getElementById('dice-overlay').style.display = 'flex';
+    document.getElementById('dice-status').innerText = "Удачи!";
+    document.getElementById('dice-visual').innerText = "?";
+}
+
+// 3. Логика одного броска
+function playDiceTurn() {
+    const input = document.getElementById('dice-input-amount');
+    const bet = parseInt(input.value);
+    const balance = getRawBalance();
+    const btn = document.getElementById('dice-play-btn');
     const visual = document.getElementById('dice-visual');
     const status = document.getElementById('dice-status');
-    const closeBtn = document.getElementById('dice-close');
 
-    let currentBal = parseInt(balLabel.innerText.replace(/\s/g, ''));
-    if (currentBal < bet) {
-        tg.showAlert("Недостаточно 💎!");
-        return;
-    }
+    // Проверки
+    if (isNaN(bet) || bet <= 0) return tg.showAlert("Введите сумму ставки!");
+    if (bet > balance) return tg.showAlert("Недостаточно 💎 на балансе!");
 
-    // Списываем ставку
-    currentBal -= bet;
-    balLabel.innerText = currentBal.toLocaleString();
-    if (arenaBal) arenaBal.innerText = currentBal.toLocaleString();
-
-    // ЗАПУСК АНИМАЦИИ
-    overlay.style.display = 'flex';
+    // Блокируем кнопку на время анимации
+    btn.disabled = true;
+    btn.style.opacity = "0.5";
+    
+    // Списываем ставку из визуального баланса
+    updateUIBalance(balance - bet);
+    
+    // Анимация
     visual.classList.add('rolling');
-    status.innerText = "Испытываем удачу...";
-    closeBtn.style.display = 'none';
-
-    const faces = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
-    let flicker = setInterval(() => {
-        visual.innerText = faces[Math.floor(Math.random() * faces.length)];
-    }, 80);
+    status.innerText = "Кубик катится...";
+    tg.HapticFeedback.impactOccurred('medium');
 
     setTimeout(() => {
-        clearInterval(flicker);
         visual.classList.remove('rolling');
+        btn.disabled = false;
+        btn.style.opacity = "1";
+
+        const winChance = getWinChance(bet);
+        const isWin = Math.random() < winChance;
+        const faces = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
         
-        // --- ЛОГИКА ДИНАМИЧЕСКИХ ШАНСОВ ---
-        let winProbability;
-        if (bet <= 10) {
-            winProbability = 0.55; // 55% шанс
-        } else if (bet <= 20) {
-            winProbability = 0.45; // 45% шанс
-        } else {
-            winProbability = 0.35; // 35% шанс для ставок 30+ (менее 40%)
-        }
-
-        const randomRoll = Math.random(); // Число от 0 до 1
-        let res;
-        let isWin = false;
-
-        if (randomRoll < winProbability) {
-            // ИГРОК ВЫИГРАЛ
-            res = 6; 
-            isWin = true;
-        } else {
-            // ИГРОК ПРОИГРАЛ (выпадет любое число от 1 до 5)
-            res = Math.floor(Math.random() * 5) + 1;
-            isWin = false;
-        }
-        // ---------------------------------
-
-        visual.innerText = faces[res - 1];
-        let changeForDb = -bet;
-
+        let resultFace;
         if (isWin) {
-            // ПОБЕДА (в стиле 1win - зеленый цвет)
+            resultFace = 6; // Для визуала при победе всегда 6
             const winAmount = bet * 3;
-            currentBal += winAmount;
-            changeForDb = winAmount - bet;
-            
-            status.innerHTML = `<span style="color:#22c55e">🔥 ПОБЕДА! +${winAmount} 💎</span>`;
+            updateUIBalance(getRawBalance() + winAmount);
+            diceSessionProfit += (winAmount - bet); // Плюс к сессии
+            status.innerHTML = `<span style="color:#22c55e">ВЫИГРЫШ: +${winAmount} 💎</span>`;
             tg.HapticFeedback.notificationOccurred('success');
         } else {
-            // ПРОИГРЫШ (в стиле 1win - красный цвет)
-            status.innerHTML = `<span style="color:#ff4d4d">Выпало ${res}. Попробуй еще раз!</span>`;
+            resultFace = Math.floor(Math.random() * 5) + 1; // Проигрыш: 1-5
+            diceSessionProfit -= bet; // Минус из сессии
+            status.innerHTML = `<span style="color:#ff4d4d">ПРОИГРЫШ</span>`;
             tg.HapticFeedback.notificationOccurred('error');
         }
 
-        balLabel.innerText = currentBal.toLocaleString();
-        if (arenaBal) arenaBal.innerText = currentBal.toLocaleString();
-        closeBtn.style.display = 'block';
+        visual.innerText = faces[resultFace - 1];
+    }, 1000);
+}
 
+// 4. Завершение игры и отправка данных боту
+function exitDiceGame() {
+    // Отправляем суммарный результат сессии боту (это закроет Mini App)
+    if (diceSessionProfit !== 0) {
         tg.sendData(JSON.stringify({
             action: "game_result",
-            amount: changeForDb
+            amount: diceSessionProfit
         }));
-    }, 1800);
-}
-    // 8. ФУНКЦИЯ ЗАКРЫТИЯ КУБИКА
-    function closeDice() {
-        const overlay = document.getElementById('dice-overlay');
-        if (overlay) overlay.style.display = 'none';
-        tg.HapticFeedback.impactOccurred('light');
+    } else {
+        // Если ничего не выиграл и не проиграл (просто открыл и закрыл)
+        document.getElementById('dice-overlay').style.display = 'none';
     }
+}
+
 
         // 6. ИНИЦИАЛИЗАЦИЯ TON CONNECT
 function initTon() {
