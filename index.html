@@ -1621,30 +1621,26 @@ function closePulse() {
 
        
 // 7. ГЛАВНЫЙ ЗАПУСК ПРИЛОЖЕНИЯ
-       window.onload = function() {
-        // 1. Инициализируем данные и интерфейс
+      window.onload = function() {
+    try {
         initApp();
         renderGames();
-        //initTon();
+        initTon();
+    } catch (e) {
+        console.error("Ошибка при старте:", e);
+    }
 
-        // 2. Скрываем лоадер через 1.5 секунды
-        setTimeout(() => {
-            const loader = document.getElementById('loader');
-            const app = document.getElementById('app');
-            
-            if (loader) loader.style.display = 'none';
-            
-            if (app) {
-                app.style.display = 'flex';
-                // Плавное проявление (opacity)
-                setTimeout(() => { 
-                    app.style.opacity = '1'; 
-                }, 50);
-            }
-        }, 1500);
-    };
+    setTimeout(() => {
+        const loader = document.getElementById('loader');
+        if (loader) loader.style.display = 'none';
+        const app = document.getElementById('app');
+        if (app) {
+            app.style.display = 'flex';
+            setTimeout(() => { app.style.opacity = '1'; }, 50);
+        }
+    }, 1500);
+};
 
-    // Закрываем скрипт и документ
     </script>
 
 </body>
