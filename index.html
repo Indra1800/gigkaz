@@ -297,10 +297,7 @@
     </div>
 
     <!-- 1. ОКНО ИГРЫ В КУБИК (ВЫНЕСЛИ ИЗ #APP ДЛЯ КОРРЕКТНОЙ АНИМАЦИИ) -->
-<div id="dice-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999; flex-direction:column; align-items:center; justify-content:center; backdrop-filter:blur(15px); perspective: 1000px;">
-    
-    <!-- 3D СЦЕНА КУБИКА -->
-    <div id="dice-overlay" style="display:none;">
+<div id="dice-overlay" style="display:none;">
     <div class="dice-scene">
         <div id="dice-cube" class="cube" style="width:100%; height:100%; transform-style:preserve-3d;">
             <div class="face front">⚀</div>
@@ -321,6 +318,7 @@
 
     <button onclick="exitDiceGame()">ВЕРНУТЬСЯ В МЕНЮ</button>
 </div>
+
 
 
 
