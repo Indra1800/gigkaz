@@ -673,73 +673,64 @@ function openBetPopup() {
 
 
 // 5. ОСНОВНАЯ ЛОГИКА ИГРЫ КУБИК (С ДИНАМИЧЕСКИМИ ШАНСАМИ)
-let diceSessionProfit = 0; // Накопленный профит за одну сессию игры
+let diceSessionProfit = 0; // Копит результат за все броски в текущем окне
 
-// 1. Единая логика шансов (как ты просил)
-function getWinChance(bet) {
-    // До 15 кристаллов — 35%, более 15 — 20%
-    return bet <= 15 ? 0.35 : 0.20;
-}
-
-// 2. Функция запуска игры из Арены
-function openDiceGame() {
-    diceSessionProfit = 0; // Сбрасываем сессию при новом входе
-    document.getElementById('dice-overlay').style.display = 'flex';
-    document.getElementById('dice-status').innerText = "Удачи!";
-    document.getElementById('dice-visual').innerText = "?";
-}
-
-// 3. Логика одного броска
 function playDiceTurn() {
     const input = document.getElementById('dice-input-amount');
     const bet = parseInt(input.value);
-    const balance = getRawBalance();
+    let currentBal = getRawBalance(); // Берем актуальное число из HTML
+
     const btn = document.getElementById('dice-play-btn');
     const visual = document.getElementById('dice-visual');
     const status = document.getElementById('dice-status');
 
-    // Проверки
+    // 1. Проверки
     if (isNaN(bet) || bet <= 0) return tg.showAlert("Введите сумму ставки!");
-    if (bet > balance) return tg.showAlert("Недостаточно 💎 на балансе!");
+    if (bet > currentBal) return tg.showAlert("Недостаточно 💎!");
 
-    // Блокируем кнопку на время анимации
+    // 2. Блокировка кнопки (чтобы не спамили)
     btn.disabled = true;
-    btn.style.opacity = "0.5";
     
-    // Списываем ставку из визуального баланса
-    updateUIBalance(balance - bet);
+    // 3. Списываем ставку из визуального баланса СРАЗУ
+    updateUIBalance(currentBal - bet);
     
-    // Анимация
+    // 4. Анимация
     visual.classList.add('rolling');
-    status.innerText = "Кубик катится...";
-    tg.HapticFeedback.impactOccurred('medium');
+    status.innerText = "Крутим...";
 
     setTimeout(() => {
         visual.classList.remove('rolling');
         btn.disabled = false;
-        btn.style.opacity = "1";
 
-        const winChance = getWinChance(bet);
+        // 5. Твоя новая логика шансов (35% и 20%)
+        const winChance = bet <= 15 ? 0.35 : 0.20;
         const isWin = Math.random() < winChance;
-        const faces = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
         
+        const faces = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
         let resultFace;
+
         if (isWin) {
-            resultFace = 6; // Для визуала при победе всегда 6
+            resultFace = 6;
             const winAmount = bet * 3;
+            // Начисляем выигрыш на баланс в HTML
             updateUIBalance(getRawBalance() + winAmount);
-            diceSessionProfit += (winAmount - bet); // Плюс к сессии
+            // Плюсуем ЧИСТУЮ прибыль в сессию
+            diceSessionProfit += (winAmount - bet);
             status.innerHTML = `<span style="color:#22c55e">ВЫИГРЫШ: +${winAmount} 💎</span>`;
             tg.HapticFeedback.notificationOccurred('success');
         } else {
-            resultFace = Math.floor(Math.random() * 5) + 1; // Проигрыш: 1-5
-            diceSessionProfit -= bet; // Минус из сессии
+            resultFace = Math.floor(Math.random() * 5) + 1;
+            // Минусуем ставку из сессии
+            diceSessionProfit -= bet;
             status.innerHTML = `<span style="color:#ff4d4d">ПРОИГРЫШ</span>`;
             tg.HapticFeedback.notificationOccurred('error');
         }
 
         visual.innerText = faces[resultFace - 1];
-    }, 1000);
+        
+        // !!! ВАЖНО: Тут НЕ ДОЛЖНО быть tg.sendData !!!
+        // Данные уйдут только в функции exitDiceGame
+    }, 800);
 }
 
 // 4. Завершение игры и отправка данных боту
@@ -1554,7 +1545,7 @@ function closePulse() {
         // 1. Инициализируем данные и интерфейс
         initApp();
         renderGames();
-        initTon();
+        //initTon();
 
         // 2. Скрываем лоадер через 1.5 секунды
         setTimeout(() => {
