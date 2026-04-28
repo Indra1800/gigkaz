@@ -283,14 +283,19 @@
     </div>
 
     <!-- 1. ОКНО ИГРЫ В КУБИК (ВЫНЕСЛИ ИЗ #APP ДЛЯ КОРРЕКТНОЙ АНИМАЦИИ) -->
-        <div id="dice-overlay">
-    <div id="dice-visual" class="dice">?</div>
-    <div id="dice-bet-block" style="margin-top:20px;">
-        <input type="number" id="dice-input-bet" value="10" style="width:80px; padding:10px; border-radius:10px; border:none; text-align:center;">
-        <button onclick="playDiceStep()" style="background:var(--success); color:white; border:none; padding:10px 20px; border-radius:10px; font-weight:bold;">ИГРАТЬ</button>
+<div id="dice-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999; flex-direction:column; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
+    <div id="dice-visual" class="dice" style="width:100px; height:100px; background:white; color:black; border-radius:20px; display:flex; align-items:center; justify-content:center; font-size:50px; font-weight:bold; box-shadow:0 0 30px var(--accent);">?</div>
+    
+    <h2 id="dice-status" style="color:white; margin:20px 0; font-family:sans-serif;">Установите ставку</h2>
+
+    <div id="dice-bet-block" style="background:rgba(255,255,255,0.05); padding:20px; border-radius:20px; border:1px solid #333; text-align:center;">
+        <div style="color:var(--gray); font-size:12px; margin-bottom:8px; text-transform:uppercase;">Сумма ставки 💎</div>
+        <input type="number" id="dice-input-amount" value="10" min="1" style="width:120px; background:#000; border:2px solid #333; color:white; padding:12px; border-radius:12px; text-align:center; font-size:18px; font-weight:bold; margin-bottom:15px; outline:none;">
+        <br>
+        <button onclick="playDiceTurn()" id="dice-play-btn" style="background:var(--accent-gradient); color:white; border:none; padding:15px 40px; border-radius:15px; font-weight:bold; font-size:16px; cursor:pointer; width:100%; box-shadow:0 4px 15px rgba(52,126,255,0.3);">БРОСИТЬ КУБИК</button>
     </div>
-    <h2 id="dice-status">Готовы?</h2>
-    <button onclick="closeDiceAndSend()" id="dice-close" style="background:gray; border:none; color:white; padding:10px 30px; border-radius:10px; margin-top:10px;">ВЫХОД</button>
+
+    <button onclick="exitDiceGame()" style="background:none; border:none; color:var(--gray); margin-top:30px; text-decoration:underline; font-size:14px; cursor:pointer;">ВЕРНУТЬСЯ В МЕНЮ</button>
 </div>
 
 
@@ -1571,7 +1576,7 @@ function closePulse() {
         // 1. Инициализируем данные и интерфейс
         initApp();
         renderGames();
-        //initTon();
+        initTon();
 
         // 2. Скрываем лоадер через 1.5 секунды
         setTimeout(() => {
