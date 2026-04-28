@@ -596,6 +596,21 @@
 }
 
 
+function getRawBalance() {
+    const el = document.getElementById('top-bal');
+    if (!el) return 0;
+    return parseInt(el.innerText.replace(/\s/g, '')) || 0;
+}
+
+function updateUIBalance(newVal) {
+    const ids = ['top-bal', 'arena-bal', 'pulse-bal'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = newVal.toLocaleString();
+    });
+}
+
+       
        /*ПРОВЕРКА ПОБЕДЫ*/
 function checkWin(bet) {
     const chance = bet <= 15 ? 0.35 : 0.20; // 35% для мелких, 20% для крупных
