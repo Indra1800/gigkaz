@@ -64,9 +64,9 @@
     z-index: 9999; backdrop-filter: blur(10px);
 }
 
-    .dice-scene { 
+        .dice-scene { 
         width: 100px; height: 100px; 
-        perspective: 1200px; /* Увеличили глубину */
+        perspective: 1200px; 
         margin: 60px auto;
     }
 
@@ -74,24 +74,17 @@
         width: 100%; height: 100%; 
         position: relative; 
         transform-style: preserve-3d;
-        /* Длительность увеличена до 3.5 секунд */
-        transition: transform 3.5s cubic-bezier(0.15, 1, 0.3, 1);
+        /* Убедись, что здесь нет фиксированного transform */
     }
 
     .face {
         position: absolute; 
         width: 100px; height: 100px; 
-        background: #ffffff;
-        border: 1px solid #ddd; 
-        border-radius: 15px; 
         display: flex; align-items: center; justify-content: center; 
-        /* Растягиваем символ на всю грань */
-        font-size: 85px; 
-        line-height: 100px;
-        color: #1a1a1a;
-        box-shadow: inset 0 0 20px rgba(0,0,0,0.05), 0 10px 20px rgba(0,0,0,0.1);
+        font-size: 95px; /* Максимальный размер */
         backface-visibility: visible;
-        user-select: none;
+        background: transparent; /* Убрали белый квадрат */
+        border: none; /* Убрали рамки */
     }
 
 
@@ -687,8 +680,7 @@ function playDiceTurn() {
     const btn = document.getElementById('dice-play-btn');
     const cube = document.getElementById('dice-cube');
     const status = document.getElementById('dice-status');
-    const inputEl = document.getElementById('dice-input-amount');
-    const bet = parseInt(inputEl.value);
+    const bet = parseInt(document.getElementById('dice-input-amount').value);
     const balance = getRawBalance();
 
     if (isNaN(bet) || bet <= 0 || bet > balance) return tg.showAlert("Ошибка ставки!");
@@ -696,8 +688,8 @@ function playDiceTurn() {
     btn.disabled = true;
     updateUIBalance(balance - bet);
     
-    cube.style.transition = "transform 0.6s ease-in";
-    cube.style.transform = "scale(1.3) translateY(-40px) rotateX(-45deg) rotateY(-45deg)";
+    cube.style.transition = "none";
+    cube.style.transform = "rotateX(0deg) rotateY(0deg) scale(1.3)";
     status.innerText = "Бросок...";
 
     setTimeout(() => {
@@ -716,9 +708,8 @@ function playDiceTurn() {
         const result = isWin ? 6 : Math.floor(Math.random() * 5) + 1;
         const rot = rotations[result];
         const extraSpins = 2520; 
-        const randomTilt = (Math.random() - 0.5) * 3;
 
-        cube.style.transform = `scale(1) rotateX(${rot.x + extraSpins + randomTilt}deg) rotateY(${rot.y + extraSpins + randomTilt}deg)`;
+        cube.style.transform = `scale(1) rotateX(${rot.x + extraSpins}deg) rotateY(${rot.y + extraSpins}deg)`;
 
         setTimeout(() => {
             if (isWin) {
@@ -733,8 +724,8 @@ function playDiceTurn() {
                 tg.HapticFeedback.notificationOccurred('error');
             }
             btn.disabled = false;
-        }, 3600);
-    }, 600);
+        }, 3500);
+    }, 50);
 }
 
 function exitDiceGame() {
@@ -744,6 +735,7 @@ function exitDiceGame() {
         diceSessionProfit = 0;
     }
 }
+
 
 
         // 6. ИНИЦИАЛИЗАЦИЯ TON CONNECT
@@ -1518,7 +1510,7 @@ function closePulse() {
     try {
         initApp();
         renderGames();
-        //initTon();
+        initTon();
     } catch (e) {
         console.error("Ошибка при старте:", e);
     }
