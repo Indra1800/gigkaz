@@ -1531,24 +1531,41 @@ function closePulse() {
 
        
 // 7. ГЛАВНЫЙ ЗАПУСК ПРИЛОЖЕНИЯ
-      window.onload = function() {
+window.onload = () => {
     try {
-        initApp();
+        if (window.Telegram && window.Telegram.WebApp) {
+            tg.ready();
+            tg.expand();
+            const user = tg.initDataUnsafe?.user;
+            if (user) {
+                document.getElementById('u-name').innerText = user.username ? '@' + user.username : user.first_name;
+                document.getElementById('u-id').innerText = 'ID: ' + user.id;
+            }
+        }
+    } catch (e) {}
+
+    try {
         renderGames();
-        //initTon();
-    } catch (e) {
-        console.error("Ошибка при старте:", e);
-    }
+    } catch (e) {}
+
+    try {
+        if (typeof TON_CONNECT_UI !== 'undefined') {
+            initTon();
+        }
+    } catch (e) {}
 
     setTimeout(() => {
         const loader = document.getElementById('loader');
-        if (loader) loader.style.display = 'none';
         const app = document.getElementById('app');
+        if (loader) {
+            loader.style.opacity = '0';
+            setTimeout(() => { loader.style.display = 'none'; }, 500);
+        }
         if (app) {
             app.style.display = 'flex';
-            setTimeout(() => { app.style.opacity = '1'; }, 50);
+            setTimeout(() => { app.style.opacity = '1'; }, 100);
         }
-    }, 1500);
+    }, 1000);
 };
 
     </script>
