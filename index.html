@@ -678,14 +678,10 @@ function openBetPopup() {
 }
 
 
-// 5. ОСНОВНАЯ ЛОГИКА ИГРЫ КУБИК (С ДИНАМИЧЕСКИМИ ШАНСАМИ)
-// --- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ СЕССИИ ---
-let diceSessionProfit = 0; 
-
-// 1. ФУНКЦИЯ ОТКРЫТИЯ (Вызывается из меню Арены)
+// 5. ОСНОВНАЯ ЛОГИКА ИГРЫ КУБИК
 let currentRotX = 0;
 let currentRotY = 0;
-let diceSessionProfit = 0;
+let diceSessionProfit = 0; // Оставили только одно объявление
 
 function openDiceGame() {
     diceSessionProfit = 0;
@@ -698,7 +694,8 @@ function openDiceGame() {
         cube.style.transition = "none";
         cube.style.transform = "rotateX(0deg) rotateY(0deg)";
         document.getElementById('dice-status').innerText = "ВАША СТАВКА?";
-        document.getElementById('dice-play-btn').disabled = false;
+        const playBtn = document.getElementById('dice-play-btn');
+        if (playBtn) playBtn.disabled = false;
     }
 }
 
@@ -707,6 +704,9 @@ function playDiceTurn() {
     const cube = document.getElementById('dice-cube');
     const status = document.getElementById('dice-status');
     const inputEl = document.getElementById('dice-input-amount');
+    
+    if (!btn || !cube || !inputEl) return;
+
     const bet = parseInt(inputEl.value);
     const balance = getRawBalance();
 
@@ -742,11 +742,11 @@ function playDiceTurn() {
             updateUIBalance(getRawBalance() + winAmt);
             diceSessionProfit += (winAmt - bet);
             status.innerHTML = `<span style="color:#22c55e">ВЫПАЛО ${result}! +${winAmt} 💎</span>`;
-            tg.HapticFeedback.notificationOccurred('success');
+            if (window.tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         } else {
             diceSessionProfit -= bet;
             status.innerHTML = `<span style="color:#ff4d4d">ВЫПАЛО ${result}</span>`;
-            tg.HapticFeedback.notificationOccurred('error');
+            if (window.tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
         }
         btn.disabled = false;
         cube.style.transform = `rotateX(${currentRotX}deg) rotateY(${currentRotY}deg) scale(1)`;
@@ -754,7 +754,8 @@ function playDiceTurn() {
 }
 
 function exitDiceGame() {
-    document.getElementById('dice-overlay').style.display = 'none';
+    const overlay = document.getElementById('dice-overlay');
+    if (overlay) overlay.style.display = 'none';
     if (diceSessionProfit !== 0) {
         tg.sendData(JSON.stringify({ action: "game_result", amount: diceSessionProfit }));
         diceSessionProfit = 0;
