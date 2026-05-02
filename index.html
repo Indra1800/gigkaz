@@ -58,47 +58,48 @@
     .active { display: flex !important; }
 
           /* Улучшенная сцена кубика */
+#dice-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 9999; backdrop-filter: blur(10px);
+}
+
 .dice-scene {
-    width: 100px;
-    height: 100px;
-    perspective: 600px;
-    margin: 50px auto;
+    width: 100px; height: 100px; perspective: 1000px; margin: 60px auto;
 }
 
 #dice-cube {
-    width: 100%;
-    height: 100%;
-    position: relative;
+    width: 100%; height: 100%; position: relative;
     transform-style: preserve-3d;
-    /* Плавное замедление как в ТГ */
-    transition: transform 2s cubic-bezier(0.15, 1, 0.3, 1);
+    transition: transform 2.5s cubic-bezier(0.17, 0.67, 0.1, 1.03);
 }
 
 .face {
-    position: absolute;
-    width: 100px;
-    height: 100px;
-    background: white;
-    border: 2px solid #ddd;
-    border-radius: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 50px;
+    position: absolute; width: 100px; height: 100px;
+    background: radial-gradient(circle at 30% 30%, #ffffff, #e6e6e6);
+    border: 1px solid #ccc; border-radius: 15px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 60px; color: #333;
     box-shadow: inset 0 0 15px rgba(0,0,0,0.1);
-    backface-visibility: visible;
 }
 
-/* Эффект тряски при броске */
-.cube-shaking {
-    animation: dice-shake 0.1s infinite;
-}
+/* Координаты для честного 3D */
+.front  { transform: rotateY(0deg) translateZ(50px); }
+.back   { transform: rotateY(180deg) translateZ(50px); }
+.right  { transform: rotateY(90deg) translateZ(50px); }
+.left   { transform: rotateY(-90deg) translateZ(50px); }
+.top    { transform: rotateX(90deg) translateZ(50px); }
+.bottom { transform: rotateX(-90deg) translateZ(50px); }
 
-@keyframes dice-shake {
-    0% { transform: translate(2px, 2px); }
-    50% { transform: translate(-2px, -2px); }
-    100% { transform: translate(2px, -2px); }
+/* Кнопка выхода в стиле 1win (синий неон) */
+.btn-exit {
+    margin-top: 30px; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1); color: #fff;
+    padding: 12px 30px; border-radius: 12px; font-weight: bold;
+    cursor: pointer; transition: 0.3s;
 }
+.btn-exit:active { background: var(--error); border-color: var(--error); }
+
 
           /* 5. ИГРОВЫЕ МЕХАНИКИ: СЛОТЫ */
     .slot-machine {
@@ -238,14 +239,14 @@
         </div>
     </div>
     
-    <h2 id="dice-status">Удачи!</h2>
+    <h2 id="dice-status" style="color:white; text-shadow: 0 0 10px rgba(255,255,255,0.3);">ВАША СТАВКА?</h2>
 
-    <div id="dice-bet-block">
-        <input type="number" id="dice-input-amount" value="10">
-        <button id="dice-play-btn" onclick="playDiceTurn()" class="btn-main">БРОСИТЬ КУБИК</button>
+    <div id="dice-bet-block" style="display:flex; flex-direction:column; gap:10px; align-items:center;">
+        <input type="number" id="dice-input-amount" value="10" style="background:#18222d; border:1px solid #347eff; color:white; padding:15px; border-radius:12px; width:120px; text-align:center; font-size:18px;">
+        <button id="dice-play-btn" onclick="playDiceTurn()" class="btn-main" style="width:200px; margin:0;">БРОСИТЬ КУБИК</button>
     </div>
 
-    <button onclick="exitDiceGame()" style="background:none; border:1px solid var(--gray); color:var(--gray); padding:10px 20px; border-radius:12px; margin-top:20px;">ВЕРНУТЬСЯ В МЕНЮ</button>
+    <button onclick="exitDiceGame()" class="btn-exit">ВЕРНУТЬСЯ НА АРЕНУ</button>
 </div>
 
 
@@ -658,42 +659,39 @@ let diceSessionProfit = 0;
 
 // 1. ФУНКЦИЯ ОТКРЫТИЯ (Вызывается из меню Арены)
 function openDiceGame() {
-    diceSessionProfit = 0; // Сброс накопленного профита перед новой сессией
+    diceSessionProfit = 0;
     const overlay = document.getElementById('dice-overlay');
     if (overlay) {
         overlay.style.display = 'flex';
-        document.getElementById('dice-status').innerText = "Установите ставку";
-        document.getElementById('dice-visual').innerText = "?";
-        // Разблокируем кнопку, если она была выключена
-        const btn = document.getElementById('dice-play-btn');
-        if(btn) { btn.disabled = false; btn.style.opacity = "1"; }
-    } else {
-        console.error("Dice overlay not found!");
+        const cube = document.getElementById('dice-cube');
+        cube.style.transition = "none";
+        cube.style.transform = "rotateX(0deg) rotateY(0deg)";
+        document.getElementById('dice-status').innerText = "ВАША СТАВКА?";
+        document.getElementById('dice-play-btn').disabled = false;
     }
 }
 
-// 2. ОСНОВНАЯ ЛОГИКА БРОСКА
 function playDiceTurn() {
     const btn = document.getElementById('dice-play-btn');
     const cube = document.getElementById('dice-cube');
     const status = document.getElementById('dice-status');
     const inputEl = document.getElementById('dice-input-amount');
-    const bet = inputEl ? parseInt(inputEl.value) : 0;
+    const bet = parseInt(inputEl.value);
     const balance = getRawBalance();
 
-    if (isNaN(bet) || bet <= 0 || bet > balance) return tg.showAlert("Ошибка ставки или баланса!");
+    if (isNaN(bet) || bet <= 0 || bet > balance) return tg.showAlert("Недостаточно 💎!");
 
     btn.disabled = true;
     updateUIBalance(balance - bet);
     
-    cube.classList.add('spinning');
+    cube.style.transition = "transform 0.4s ease-out";
+    cube.style.transform = "scale(1.2) translateY(-30px) rotateX(45deg) rotateY(45deg)";
     status.innerText = "Бросок...";
 
     setTimeout(() => {
-        cube.classList.remove('spinning');
+        cube.style.transition = "transform 2.2s cubic-bezier(0.15, 1, 0.3, 1)";
         
         const isWin = bet <= 15 ? (Math.random() < 0.35) : (Math.random() < 0.20);
-        
         const rotations = {
             1: {x: 0, y: 0},
             6: {x: 0, y: 180},
@@ -703,41 +701,34 @@ function playDiceTurn() {
             5: {x: 90, y: 0}
         };
 
-        let result = isWin ? 6 : Math.floor(Math.random() * 5) + 1;
-        let rot = rotations[result];
+        const result = isWin ? 6 : Math.floor(Math.random() * 5) + 1;
+        const rot = rotations[result];
+        const extraSpins = 1440; 
 
-        cube.style.transform = `rotateX(${rot.x + 720}deg) rotateY(${rot.y + 720}deg)`;
+        cube.style.transform = `scale(1) rotateX(${rot.x + extraSpins}deg) rotateY(${rot.y + extraSpins}deg)`;
 
         setTimeout(() => {
             if (isWin) {
                 const winAmt = bet * 3;
                 updateUIBalance(getRawBalance() + winAmt);
                 diceSessionProfit += (winAmt - bet);
-                status.innerHTML = `<span style="color:#22c55e">ПОБЕДА! +${winAmt} 💎</span>`;
+                status.innerHTML = `<span style="color:#22c55e">ВЫПАЛО ${result}! +${winAmt} 💎</span>`;
                 tg.HapticFeedback.notificationOccurred('success');
             } else {
                 diceSessionProfit -= bet;
-                status.innerHTML = `<span style="color:#ff4d4d">ПРОИГРЫШ</span>`;
+                status.innerHTML = `<span style="color:#ff4d4d">ВЫПАЛО ${result}</span>`;
                 tg.HapticFeedback.notificationOccurred('error');
             }
             btn.disabled = false;
-        }, 1500);
-    }, 600);
+        }, 2300);
+    }, 400);
 }
 
 function exitDiceGame() {
-    const overlay = document.getElementById('dice-overlay');
-    if (overlay) {
-        overlay.style.display = 'none';
-    }
-    
-    if (typeof diceSessionProfit !== 'undefined' && diceSessionProfit !== 0) {
-        console.log("Dice Session Result:", diceSessionProfit);
+    document.getElementById('dice-overlay').style.display = 'none';
+    if (diceSessionProfit !== 0) {
+        tg.sendData(JSON.stringify({ action: "game_result", amount: diceSessionProfit }));
         diceSessionProfit = 0;
-    }
-    
-    if (window.Telegram?.WebApp?.HapticFeedback) {
-        tg.HapticFeedback.impactOccurred('light');
     }
 }
 
@@ -1515,7 +1506,7 @@ function closePulse() {
     try {
         initApp();
         renderGames();
-        //initTon();
+        initTon();
     } catch (e) {
         console.error("Ошибка при старте:", e);
     }
