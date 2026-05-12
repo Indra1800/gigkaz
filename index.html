@@ -525,58 +525,60 @@
     
    <script>
         const tg = window.Telegram.WebApp;
-        let tonConnectUI;
+let tonConnectUI;
 
-        function initApp() {
-            try {
-                tg.ready();
-                tg.expand();
-                const user = tg.initDataUnsafe?.user;
-                if (user) {
-                    document.getElementById('u-name').innerText = user.username ? '@' + user.username : user.first_name;
-                    document.getElementById('u-id').innerText = 'ID: ' + user.id;
-                    const photoEl = document.getElementById('u-photo');
-                    if (user.photo_url && photoEl) {
-                        photoEl.src = user.photo_url;
-                        photoEl.style.display = 'block';
-                    }
-                }
-            } catch (e) { console.error("Ошибка профиля:", e); }
+// 1. ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
+function initApp() {
+    try {
+        tg.ready();
+        tg.expand();
+        const user = tg.initDataUnsafe?.user;
+        if (user) {
+            document.getElementById('u-name').innerText = user.username ? '@' + user.username : user.first_name;
+            document.getElementById('u-id').innerText = 'ID: ' + user.id;
+            const photoEl = document.getElementById('u-photo');
+            if (user.photo_url && photoEl) {
+                photoEl.src = user.photo_url;
+                photoEl.style.display = 'block';
+            }
         }
-
-               // 2. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
-    function showTab(id) {
-        // Скрываем все экраны
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        // Показываем нужный
-        const target = document.getElementById(id);
-        if (target) target.classList.add('active');
-        
-        // Подсветка кнопок в меню (если ID совпадает)
-        const nArena = document.getElementById('n-arena');
-        const nProfile = document.getElementById('n-profile');
-        
-        if (nArena) nArena.style.color = (id === 'scr-arena') ? 'var(--accent)' : 'var(--gray)';
-        if (nProfile) nProfile.style.color = (id === 'scr-profile') ? '#fff' : 'var(--gray)';
-        
-        // Тактильная отдача
-        tg.HapticFeedback.impactOccurred('light');
+    } catch (e) { 
+        console.error("Ошибка профиля:", e); 
     }
+}
 
-               // 3. ПОЛНЫЙ СПИСОК ИГР (16 ШТУК)
-    const gameLibrary = [
-        { n: "Кубик", i: "🎲" }, { n: "Слот Классик", i: "🎰" },
-        { n: "Цель", i: "🎯" }, { n: "Орел/Решка", i: "🪙" },
-        { n: "Пульс X100", i: "📈" }, { n: "Пульс Stable", i: "📉" },
-        { n: "Кейс Крипта", i: "📦" }, { n: "Кейс NFT", i: "🖼" },
-        { n: "Слот Золото", i: "💰" }, { n: "Слот Фрукты", i: "🍎" },
-        { n: "Слот Египет", i: "🏺" }, { n: "Карты", i: "🃏", pvp: true },
-        { n: "Рулетка", i: "🔫", pvp: true }, { n: "Портал", i: "🌀" },
-        { n: "Мины", i: "💣" }, { n: "Ракетка", i: "🚀" }
-    ];
+// 2. УПРАВЛЕНИЕ БАЛАНСОМ
+function getRawBalance() {
+    const el = document.getElementById('top-bal');
+    if (!el) return 0;
+    return parseInt(el.innerText.replace(/\s/g, '')) || 0;
+}
 
-    // Функция отрисовки карточек
-  unction renderGames() {
+function updateUIBalance(newVal) {
+    const ids = ['top-bal', 'arena-bal', 'pulse-bal'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = newVal.toLocaleString();
+    });
+}
+
+// 3. ЛОГИКА ТАБОВ (ВКЛАДОК)
+function showTab(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById(id);
+    if (target) target.classList.add('active');
+    
+    const nArena = document.getElementById('n-arena');
+    const nProfile = document.getElementById('n-profile');
+    
+    if (nArena) nArena.style.color = (id === 'scr-arena') ? 'var(--accent)' : 'var(--gray)';
+    if (nProfile) nProfile.style.color = (id === 'scr-profile') ? '#fff' : 'var(--gray)';
+    
+    tg.HapticFeedback.impactOccurred('light');
+}
+
+// 4. ОТРИСОВКА АРЕНЫ
+function renderGames() {
     const grid = document.getElementById('games-list');
     if (!grid) return;
     grid.innerHTML = "";
@@ -592,7 +594,7 @@
             
             const name = g.n.toLowerCase();
 
-            // Теперь все игры открывают свои меню вместо prompt
+            // Вызов окон игр (без prompt)
             if (name.includes("кубик")) {
                 openDiceGame();
             } else if (name.includes("классик") || name.includes("золото") || name.includes("фрукт") || name.includes("египет")) {
@@ -605,7 +607,7 @@
                 openCoinGame();
             } else if (name.includes("кейс") || name.includes("крипта") || name.includes("nft")) {
                 openBoxesGame();
-            } else if (name.includes("pulse")) {
+            } else if (name.includes("пульс") || name.includes("pulse")) {
                 openPulseGame();
             } else {
                 tg.showAlert(`Игра "${g.n}" скоро появится! 🛠`);
@@ -621,20 +623,7 @@
     });
 }
 
-function getRawBalance() {
-    const el = document.getElementById('top-bal');
-    if (!el) return 0;
-    return parseInt(el.innerText.replace(/\s/g, '')) || 0;
-}
-
-function updateUIBalance(newVal) {
-    const ids = ['top-bal', 'arena-bal', 'pulse-bal'];
-    ids.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.innerText = newVal.toLocaleString();
-    });
-}
-
+// 5. СЕССИИ И ОТПРАВКА ДАННЫХ
 let sessionProfit = 0;
 
 function addToSession(amount) {
@@ -651,30 +640,7 @@ function sendSessionToBot() {
     }
 }
 
-// 4. ОКНО ВЫБОРА СТАВКИ
-function openBetPopup() {
-    // 1. Сразу спрашиваем сумму
-    const userVal = prompt("Введите сумму ставки 💎:", "100");
-    
-    // 2. Если пользователь не нажал "Отмена"
-    if (userVal !== null && userVal !== "") {
-        // Очищаем ввод от букв и пробелов
-        const amount = parseInt(userVal.replace(/\D/g, ''));
-        
-        // 3. Проверяем, что введено число больше 0
-        if (!isNaN(amount) && amount > 0) {
-            // Запускаем игру
-            startDiceGame(amount);
-        } else {
-            // Если ввел ерунду - выводим предупреждение
-            if (window.Telegram?.WebApp?.showAlert) {
-                tg.showAlert("❌ Пожалуйста, введите корректное число!");
-            } else {
-                alert("❌ Введите корректное число!");
-            }
-        }
-    }
-}
+
 
 
 // 5. ОСНОВНАЯ ЛОГИКА ИГРЫ КУБИК
