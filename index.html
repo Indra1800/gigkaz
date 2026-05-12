@@ -259,58 +259,36 @@
     </div>
 
     <!-- 1. ОКНО ИГРЫ В КУБИК (ВЫНЕСЛИ ИЗ #APP ДЛЯ КОРРЕКТНОЙ АНИМАЦИИ) -->
-<div id="dice-overlay" style="display:none;">
+div id="dice-overlay" style="display:none;">
+    <!-- Кнопка назад в углу или над кубиком -->
+    <div onclick="exitDiceGame()" style="position:absolute; top:20px; left:20px; font-size:24px; cursor:pointer; color:var(--gray);">⬅️</div>
+
     <div class="dice-scene">
         <div id="dice-cube">
-            <!-- Грань 1 -->
-            <div class="face front f1">
-                <div class="dot"></div>
-            </div>
-            <!-- Грань 6 (напротив 1) -->
+            <!-- Правильный порядок граней для логики вращения -->
+            <div class="face front f1"><div class="dot"></div></div>
             <div class="face back f6">
-                <div class="dot"></div><div class="dot"></div>
-                <div class="dot"></div><div class="dot"></div>
-                <div class="dot"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
             </div>
-            <!-- Грань 3 -->
-            <div class="face right f3">
-                <div class="dot"></div>
-                <div class="dot"></div>
-                <div class="dot"></div>
-            </div>
-            <!-- Грань 4 (напротив 3) -->
-            <div class="face left f4">
-                <div class="dot"></div><div class="dot"></div>
-                <div class="dot"></div><div class="dot"></div>
-            </div>
-            <!-- Грань 2 -->
-            <div class="face top f2">
-                <div class="dot"></div><div class="dot"></div>
-            </div>
-            <!-- Грань 5 (напротив 2) -->
+            <div class="face right f3"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+            <div class="face left f4"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+            <div class="face top f2"><div class="dot"></div><div class="dot"></div></div>
             <div class="face bottom f5">
-                <div class="dot"></div><div class="dot"></div>
-                <div class="dot"></div>
-                <div class="dot"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
             </div>
         </div>
     </div>
     
-    <h2 id="dice-status" style="color:white; text-shadow: 0 0 15px rgba(255,255,255,0.2); font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">ВАША СТАВКА?</h2>
+    <h2 id="dice-status" style="color:white; text-shadow: 0 0 10px rgba(255,255,255,0.3);">ВАША СТАВКА?</h2>
 
-    <div id="dice-bet-block" style="display:flex; flex-direction:column; gap:12px; align-items:center;">
-        <input type="number" id="dice-input-amount" value="10" placeholder="0" 
-               style="background:#18222d; border:2px solid #347eff; color:white; padding:16px; border-radius:14px; width:140px; text-align:center; font-size:22px; font-weight: 900; outline: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-        
-        <button id="dice-play-btn" onclick="playDiceTurn()" class="btn-main" 
-                style="width:220px; margin:0; padding: 18px; font-size: 16px; box-shadow: 0 5px 20px rgba(52, 126, 255, 0.4);">
-            БРОСИТЬ КУБИК
-        </button>
+    <div id="dice-bet-block" style="display:flex; flex-direction:column; gap:10px; align-items:center;">
+        <input type="number" id="dice-input-amount" value="10" style="background:#18222d; border:2px solid var(--accent); color:white; padding:15px; border-radius:12px; width:120px; text-align:center; font-size:22px; font-weight:bold;">
+        <button id="dice-play-btn" onclick="playDiceTurn()" class="btn-main" style="width:200px; margin:0;">БРОСИТЬ КУБИК</button>
+        <!-- Дублирующая кнопка выхода для удобства -->
+        <button onclick="exitDiceGame()" class="btn-exit" style="width:200px; margin-top:5px; padding:10px;">К СПИСКУ ИГР</button>
     </div>
-
-    <button onclick="exitDiceGame()" class="btn-exit">ВЕРНУТЬСЯ НА АРЕНУ</button>
 </div>
-
 
 
 
